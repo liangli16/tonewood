@@ -4,13 +4,18 @@ import { proxy, subscribe, useSnapshot } from "valtio";
 import _ from "lodash";
 import classNames from "classnames";
 
-export const usePracticeState = <T extends Record<string, any>>(
+type PracticeStateBase = {
+  pass: number;
+  all: number;
+};
+
+export const usePracticeState = <T extends PracticeStateBase>(
   defaultConfig: () => T,
   localStorageKey: string,
   persistKeys: (keyof T)[]
 ) => {
   const [state] = useState(() => proxy<T>(defaultConfig()));
-  const synthRef = useRef<any>(null);
+  const synthRef = useRef<unknown>(null);
 
   useEffect(() => {
     try {
@@ -31,8 +36,8 @@ export const usePracticeState = <T extends Record<string, any>>(
   }, []);
 
   const resetStats = () => {
-    state.pass = 0 as any;
-    state.all = 0 as any;
+    state.pass = 0;
+    state.all = 0;
   };
 
   return { state, synthRef, resetStats };
