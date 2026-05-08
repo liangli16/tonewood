@@ -33,8 +33,8 @@ export const buildChordNotes = (
 ): string[] => {
   const tonalType = CHORD_TYPE_TO_TONAL[typeId];
   const tonic = `${root}${octave}`;
-  const chord = Chord.getChord(tonalType, tonic);
-  let notes = [...chord.notes];
+  const chord = Chord.getChord(tonalType, root);
+  let notes = chord.intervals.map((iv) => Note.transpose(tonic, iv));
 
   for (let i = 0; i < inversion; i++) {
     if (notes.length === 0) break;
