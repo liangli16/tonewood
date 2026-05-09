@@ -2,11 +2,13 @@ import { Tabs } from "antd";
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import { ChordQuality } from "@/components/Practice/ChordQuality";
+import { preloadInstruments } from "@/utils/audio";
 
 const Practice = () => {
   const [activeKey, setActiveKey] = useState("chord-quality");
 
   useEffect(() => {
+    preloadInstruments();
     const fromHash = window.location.hash.slice(1);
     if (fromHash) setActiveKey(fromHash);
   }, []);
