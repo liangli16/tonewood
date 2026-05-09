@@ -11,13 +11,14 @@ import {
   type ChordTypeId,
 } from "@/utils/music";
 import { getChordPositions } from "@/utils/fretboard";
-import { playChord } from "@/utils/audio";
+import { playChord, type Instrument } from "@/utils/audio";
 import { getRandom } from "@/utils/number";
 
 type State = {
   qualities: ChordTypeId[];
   inversions: number[];
   arpeggiate: number;
+  instrument: Instrument;
   pass: number;
   all: number;
   current: {
@@ -35,6 +36,7 @@ export const ChordQuality = () => {
       qualities: ["M", "m", "7", "M7", "m7"],
       inversions: [0],
       arpeggiate: 0.06,
+      instrument: "guitar",
       pass: 0,
       all: 0,
       current: {
@@ -46,10 +48,11 @@ export const ChordQuality = () => {
       },
     }),
     "TONEWOOD_CHORD_QUALITY_CONFIG",
-    ["qualities", "inversions", "arpeggiate"]
+    ["qualities", "inversions", "arpeggiate", "instrument"]
   );
 
-  const { qualities, inversions, arpeggiate, current } = useSnapshot(state);
+  const { qualities, inversions, arpeggiate, instrument, current } =
+    useSnapshot(state);
 
   const newChord = () => {
     const root = sample(NOTE_NAMES) ?? "C";
@@ -71,7 +74,7 @@ export const ChordQuality = () => {
       state.current.octave,
       inversion
     );
-    return playChord(notes, { arpeggiate });
+    return playChord(notes, { arpeggiate, instrument: state.instrument });
   };
 
   const play = () =>
@@ -149,13 +152,26 @@ export const ChordQuality = () => {
             </div>
             <Fretboard positions={positions} highlightRoot={current.root} />
             <div className="text-xs text-gray-500">
-              Red = root · Blue = other chord tones
+              Rose = root · Amber = other chord tones
             </div>
           </div>
         );
       }}
       renderExtra={() => (
         <Space wrap>
+          <span className="flex flex-col">
+            <span className="text-xs text-gray-500">Tone</span>
+            <Radio.Group
+              value={instrument}
+              optionType="button"
+              size="middle"
+              onChange={(e) => (state.instrument = e.target.value)}
+              options={[
+                { label: "Guitar", value: "guitar" },
+                { label: "Piano", value: "piano" },
+              ]}
+            />
+          </span>
           <span className="flex flex-col">
             <span className="text-xs text-gray-500">Qualities</span>
             <Select
