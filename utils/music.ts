@@ -1,4 +1,4 @@
-import { Chord, Note, Scale, Mode } from "tonal";
+import { Chord, Note, Scale, Mode, Progression, Midi } from "tonal";
 
 export const NOTE_NAMES = [
   "C",
@@ -65,4 +65,31 @@ export const buildModeNotes = (
 
 export const pitchClassOf = (note: string): string => Note.pitchClass(note);
 
-export { Chord, Scale, Mode, Note };
+// Normalize enharmonics to sharp spelling and collapse double-accidentals.
+// tonal's Note.transpose can return theoretically-correct but ugly notes
+// like "C##5" or "E#5" for chords on sharp roots; this rewrites those to
+// "D5" / "F5" while leaving plain notes ("C#5", "F5") alone.
+export const simplifyNote = (note: string): string => {
+  const midi = Midi.toMidi(note);
+  if (midi === null) return note;
+  return Midi.midiToNoteName(midi, { sharps: true }) ?? note;
+};
+
+export const buildChordsFromRomans = (
+  key: string,
+  romans: string[],
+  octave = 4
+): string[][] => {
+  const symbols = Progression.fromRomanNumerals(key, romans);
+  return symbols.map((symbol) => {
+    const c = Chord.get(symbol);
+    if (!c.tonic || !c.intervals.length) return [];
+    const tonic = `${c.tonic}${octave}`;
+    return c.intervals.map((iv) => Note.transpose(tonic, iv));
+  });
+};
+
+export const symbolsFromRomans = (key: string, romans: string[]): string[] =>
+  Progression.fromRomanNumerals(key, romans);
+
+export { Chord, Scale, Mode, Note, Progression };

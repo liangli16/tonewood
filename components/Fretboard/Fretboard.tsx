@@ -10,14 +10,27 @@ import type { FretPosition } from "@/utils/fretboard";
 type Props = {
   positions: FretPosition[];
   highlightRoot?: string;
+  startFret?: number;
+  numFrets?: number;
+  mutes?: boolean[];
 };
 
 const STRING_W = 44;
 const ROW_H = 36;
 
-export const Fretboard = ({ positions, highlightRoot }: Props) => {
+export const Fretboard = ({
+  positions,
+  highlightRoot,
+  startFret = 0,
+  numFrets = FRET_COUNT,
+  mutes,
+}: Props) => {
   const findPosition = (stringIdx: number, fret: number) =>
     positions.find((p) => p.string === stringIdx && p.fret === fret);
+
+  const isWindowed = startFret > 0;
+  const fretAtRow = (rowIdx: number) =>
+    isWindowed ? startFret + rowIdx : rowIdx + 1;
 
   return (
     <div className="flex justify-center select-none">
@@ -25,16 +38,21 @@ export const Fretboard = ({ positions, highlightRoot }: Props) => {
         {/* Fret number gutter */}
         <div
           className="flex flex-col items-center pr-2 text-xs text-amber-800 font-medium"
-          style={{ width: 24 }}
+          style={{ width: 28 }}
         >
-          <div style={{ height: ROW_H }} />
-          {Array.from({ length: FRET_COUNT }).map((_, i) => (
+          <div
+            className="flex items-center justify-center"
+            style={{ height: ROW_H }}
+          >
+            {isWindowed ? `${startFret}fr` : ""}
+          </div>
+          {Array.from({ length: numFrets }).map((_, i) => (
             <div
               key={i}
               className="flex items-center justify-center"
               style={{ height: ROW_H }}
             >
-              {i + 1}
+              {fretAtRow(i)}
             </div>
           ))}
         </div>
@@ -46,8 +64,8 @@ export const Fretboard = ({ positions, highlightRoot }: Props) => {
             className="absolute inset-x-0 pointer-events-none flex flex-col items-center"
             style={{ top: ROW_H }}
           >
-            {Array.from({ length: FRET_COUNT }).map((_, fretIdx) => {
-              const fret = fretIdx + 1;
+            {Array.from({ length: numFrets }).map((_, fretIdx) => {
+              const fret = fretAtRow(fretIdx);
               const isSingle = FRET_MARKERS.includes(fret);
               const isDouble = DOUBLE_FRET_MARKERS.includes(fret);
               return (
@@ -85,12 +103,25 @@ export const Fretboard = ({ positions, highlightRoot }: Props) => {
                 )}
                 style={{ width: STRING_W }}
               >
-                {/* Open string row (fret 0) */}
+                {/* Top row: open-string row (open mode) or above-the-window (windowed mode) */}
                 <div
-                  className="relative w-full flex items-center justify-center border-b-[3px] border-stone-700"
+                  className={classNames(
+                    "relative w-full flex items-center justify-center",
+                    isWindowed
+                      ? "border-b border-stone-400/60"
+                      : "border-b-[3px] border-stone-700"
+                  )}
                   style={{ height: ROW_H }}
                 >
                   {(() => {
+                    if (mutes && mutes[stringIdx]) {
+                      return (
+                        <span className="text-stone-500 text-base font-semibold leading-none">
+                          ×
+                        </span>
+                      );
+                    }
+                    if (isWindowed) return null;
                     const p = findPosition(stringIdx, 0);
                     const isRoot =
                       p && highlightRoot && p.pitchClass === highlightRoot;
@@ -106,6 +137,7 @@ export const Fretboard = ({ positions, highlightRoot }: Props) => {
                         </div>
                       );
                     }
+                    if (mutes) return null;
                     return (
                       <span className="text-[11px] text-stone-500 font-medium">
                         {open.replace(/\d+$/, "")}
@@ -114,9 +146,9 @@ export const Fretboard = ({ positions, highlightRoot }: Props) => {
                   })()}
                 </div>
 
-                {/* Fret rows 1..FRET_COUNT */}
-                {Array.from({ length: FRET_COUNT }).map((_, fretIdx) => {
-                  const fret = fretIdx + 1;
+                {/* Fret rows */}
+                {Array.from({ length: numFrets }).map((_, fretIdx) => {
+                  const fret = fretAtRow(fretIdx);
                   const p = findPosition(stringIdx, fret);
                   const isRoot =
                     p && highlightRoot && p.pitchClass === highlightRoot;

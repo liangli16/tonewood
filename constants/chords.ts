@@ -3,15 +3,16 @@ import type { ChordTypeId } from "@/utils/music";
 export type ChordTypeOption = {
   value: ChordTypeId;
   label: string;
+  shortLabel: string;
   symbol: string;
 };
 
 export const CHORD_QUALITIES: ChordTypeOption[] = [
-  { value: "M", label: "Major", symbol: "" },
-  { value: "m", label: "Minor", symbol: "m" },
-  { value: "7", label: "Dominant 7", symbol: "7" },
-  { value: "M7", label: "Major 7", symbol: "maj7" },
-  { value: "m7", label: "Minor 7", symbol: "m7" },
+  { value: "M", label: "Major", shortLabel: "maj", symbol: "" },
+  { value: "m", label: "Minor", shortLabel: "min", symbol: "m" },
+  { value: "7", label: "Dominant 7", shortLabel: "7", symbol: "7" },
+  { value: "M7", label: "Major 7", shortLabel: "maj7", symbol: "maj7" },
+  { value: "m7", label: "Minor 7", shortLabel: "min7", symbol: "m7" },
 ];
 
 export type InversionOption = {

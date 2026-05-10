@@ -1,16 +1,19 @@
-import { Radio, Select, Space, Slider } from "antd";
+import { Radio, Space, Slider } from "antd";
 import { useEffect } from "react";
 import { useSnapshot } from "valtio";
 import { sample } from "lodash";
 import { PracticeShell, usePracticeState } from "./components";
+import { FormField } from "./FormField";
+import { MultiSelect } from "./MultiSelect";
 import { Fretboard } from "@/components/Fretboard/Fretboard";
 import { CHORD_QUALITIES, INVERSIONS } from "@/constants/chords";
 import {
   NOTE_NAMES,
   buildChordNotes,
+  simplifyNote,
   type ChordTypeId,
 } from "@/utils/music";
-import { getChordPositions } from "@/utils/fretboard";
+import { findVoicing } from "@/utils/fretboard";
 import { playChord, type Instrument } from "@/utils/audio";
 import { getRandom } from "@/utils/number";
 
@@ -55,10 +58,18 @@ export const ChordQuality = () => {
     useSnapshot(state);
 
   const newChord = () => {
-    const root = sample(NOTE_NAMES) ?? "C";
-    const octave = getRandom(3, 4);
-    const quality = sample(qualities) ?? "M";
-    const inversion = sample(inversions) ?? 0;
+    let root = "C";
+    let octave = 4;
+    let quality: ChordTypeId = "M";
+    let inversion = 0;
+    for (let attempt = 0; attempt < 30; attempt++) {
+      root = sample(NOTE_NAMES) ?? "C";
+      octave = getRandom(3, 4);
+      quality = sample(qualities) ?? "M";
+      inversion = sample(inversions) ?? 0;
+      const notes = buildChordNotes(root, quality, octave, inversion);
+      if (findVoicing(notes)) break;
+    }
     state.current.root = root;
     state.current.octave = octave;
     state.current.quality = quality;
@@ -95,7 +106,7 @@ export const ChordQuality = () => {
 
   return (
     <PracticeShell
-      title="Chord Quality"
+      title="Chords"
       state={state}
       prompt="Which chord did you hear?"
       onPlay={play}
@@ -133,7 +144,7 @@ export const ChordQuality = () => {
           current.octave,
           current.inversion
         );
-        const positions = getChordPositions(notes);
+        const voicing = findVoicing(notes);
         return (
           <div className="space-y-2">
             <div className="text-base">
@@ -147,20 +158,27 @@ export const ChordQuality = () => {
                 </span>
               )}
               <span className="text-gray-400 ml-2 text-sm">
-                {notes.join(" – ")}
+                {notes.map(simplifyNote).join(" – ")}
               </span>
             </div>
-            <Fretboard positions={positions} highlightRoot={current.root} />
+            {voicing && (
+              <Fretboard
+                positions={voicing.positions}
+                mutes={voicing.mutes}
+                startFret={voicing.startFret}
+                numFrets={voicing.numFrets}
+                highlightRoot={current.root}
+              />
+            )}
             <div className="text-xs text-gray-500">
-              Rose = root · Amber = other chord tones
+              Rose = root · Amber = other chord tones · × = don&apos;t play
             </div>
           </div>
         );
       }}
       renderExtra={() => (
-        <Space wrap>
-          <span className="flex flex-col">
-            <span className="text-xs text-gray-500">Tone</span>
+        <Space wrap size="middle" align="start">
+          <FormField label="Tone" minWidth={160}>
             <Radio.Group
               value={instrument}
               optionType="button"
@@ -171,45 +189,34 @@ export const ChordQuality = () => {
                 { label: "Piano", value: "piano" },
               ]}
             />
-          </span>
-          <span className="flex flex-col">
-            <span className="text-xs text-gray-500">Qualities</span>
-            <Select
-              mode="multiple"
-              value={qualities as unknown as string[]}
-              onChange={(v) => {
-                if (v.length === 0) return;
-                state.qualities = v as ChordTypeId[];
-              }}
+          </FormField>
+          <FormField label="Chords" minWidth={260}>
+            <MultiSelect<ChordTypeId>
+              value={qualities as ChordTypeId[]}
+              onChange={(v) => (state.qualities = v)}
               options={CHORD_QUALITIES.map((c) => ({
                 value: c.value,
                 label: c.label,
+                chipLabel: c.shortLabel,
               }))}
-              style={{ minWidth: 220 }}
-              maxTagCount="responsive"
             />
-          </span>
-          <span className="flex flex-col">
-            <span className="text-xs text-gray-500">Inversions</span>
-            <Select
-              mode="multiple"
-              value={inversions as unknown as number[]}
-              onChange={(v) => {
-                if (v.length === 0) return;
-                state.inversions = v as number[];
-              }}
+          </FormField>
+          <FormField label="Inversions" minWidth={200}>
+            <MultiSelect<number>
+              value={inversions as number[]}
+              onChange={(v) => (state.inversions = v)}
               options={INVERSIONS.map((i) => ({
                 value: i.value,
                 label: i.label,
               }))}
-              style={{ minWidth: 160 }}
             />
-          </span>
-          <span className="flex flex-col" style={{ minWidth: 160 }}>
-            <span className="text-xs text-gray-500">
-              Arpeggiate:{" "}
-              {arpeggiate === 0 ? "block" : `${arpeggiate.toFixed(2)}s`}
-            </span>
+          </FormField>
+          <FormField
+            label={`Arpeggiate · ${
+              arpeggiate === 0 ? "block" : `${arpeggiate.toFixed(2)}s`
+            }`}
+            minWidth={180}
+          >
             <Slider
               min={0}
               max={0.25}
@@ -217,7 +224,7 @@ export const ChordQuality = () => {
               value={arpeggiate}
               onChange={(v) => (state.arpeggiate = v as number)}
             />
-          </span>
+          </FormField>
         </Space>
       )}
     />

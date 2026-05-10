@@ -2,6 +2,7 @@ import Link from "next/link";
 import Head from "next/head";
 import { Button } from "antd";
 import { Fretboard } from "@/components/Fretboard/Fretboard";
+import { TopNav } from "@/components/TopNav";
 import { getChordPositions } from "@/utils/fretboard";
 import { buildChordNotes } from "@/utils/music";
 
@@ -16,7 +17,7 @@ type Drill = {
 const DRILLS: Drill[] = [
   {
     key: "chord-quality",
-    title: "Chord Quality",
+    title: "Chords",
     blurb:
       "Hear a chord, name it. Major, minor, dominant 7, maj7, m7 — in any inversion.",
     status: "ready",
@@ -26,7 +27,8 @@ const DRILLS: Drill[] = [
     key: "progressions",
     title: "Common Progressions",
     blurb: "I–V–vi–IV vs ii–V–I vs I–vi–IV–V vs 12-bar blues.",
-    status: "coming",
+    status: "ready",
+    href: "/practice#progression",
   },
   {
     key: "modes",
@@ -56,20 +58,7 @@ export default function Home() {
       </Head>
 
       <div className="min-h-screen bg-stone-50 text-stone-800">
-        <header className="px-6 md:px-12 py-5 flex items-center justify-between max-w-6xl mx-auto">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="inline-block w-2 h-6 bg-amber-700 rounded-sm" />
-            <span className="text-lg font-semibold tracking-tight">
-              Tonewood
-            </span>
-          </Link>
-          <Link
-            href="/practice"
-            className="text-sm text-stone-600 hover:text-amber-800 transition-colors"
-          >
-            Practice →
-          </Link>
-        </header>
+        <TopNav />
 
         <main className="px-6 md:px-12 max-w-6xl mx-auto">
           {/* Hero */}
@@ -129,7 +118,7 @@ export default function Home() {
                 What you&apos;ll train
               </h2>
               <span className="text-sm text-stone-500 hidden sm:inline">
-                One drill ready · three on the way
+                Two drills ready · two on the way
               </span>
             </div>
 
@@ -228,7 +217,7 @@ export default function Home() {
         <footer className="border-t border-stone-200 mt-8">
           <div className="max-w-6xl mx-auto px-6 md:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-stone-500">
             <span>Tonewood — built for guitarist hobbyists.</span>
-            <span>Made with Tone.js + tonal.</span>
+            <span>Made with smplr + tonal.</span>
           </div>
         </footer>
       </div>

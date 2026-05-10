@@ -92,3 +92,54 @@ export const playSequence = async (
     inst.start({ note, time: now + i * spacing, duration, velocity: 90 });
   });
 };
+
+export const playProgression = async (
+  chords: string[][],
+  opts: {
+    chordDurationSec?: number;
+    primingChord?: string[];
+    primingDurationSec?: number;
+    primingGapSec?: number;
+    instrument?: Instrument;
+  } = {}
+): Promise<void> => {
+  const {
+    chordDurationSec = 0.8,
+    primingChord,
+    primingDurationSec = 0.6,
+    primingGapSec = 0.3,
+    instrument = "guitar",
+  } = opts;
+  if (!chords.length) return;
+
+  const ctx = getContext();
+  await ensureRunning(ctx);
+  const inst = await getInstrument(instrument);
+  inst.stop();
+
+  let cursor = ctx.currentTime;
+
+  if (primingChord && primingChord.length) {
+    primingChord.forEach((note) => {
+      inst.start({
+        note,
+        time: cursor,
+        duration: primingDurationSec,
+        velocity: 80,
+      });
+    });
+    cursor += primingDurationSec + primingGapSec;
+  }
+
+  chords.forEach((notes) => {
+    notes.forEach((note) => {
+      inst.start({
+        note,
+        time: cursor,
+        duration: chordDurationSec,
+        velocity: 90,
+      });
+    });
+    cursor += chordDurationSec;
+  });
+};

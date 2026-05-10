@@ -97,10 +97,15 @@ export const PracticeShell = ({
           </span>
         </span>
       }
-      extra={renderExtra?.()}
     >
       {current ? (
-        <Space direction="vertical" className="w-full items-center" size="large">
+        <>
+          {renderExtra && (
+            <div className="pb-3 mb-6 border-b border-gray-100">
+              {renderExtra()}
+            </div>
+          )}
+          <Space direction="vertical" className="w-full items-center" size="large">
           <Button type="primary" size="large" onClick={onPlay} className="w-48">
             Play
           </Button>
@@ -138,7 +143,8 @@ export const PracticeShell = ({
               </Button>
             </div>
           )}
-        </Space>
+          </Space>
+        </>
       ) : null}
     </Card>
   );
