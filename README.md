@@ -1,40 +1,37 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Tonewood
 
-## Getting Started
+Ear training for guitarist hobbyists who want to actually understand what they hear.
 
-First, run the development server:
+**One-liner:** Stop guessing chords. Start hearing them in context.
+
+## What it is
+
+A small, opinionated ear-training app for guitarists who are learning music theory from books or videos and need a practice tool that fits how they actually play. In-context drills — cadence-primed keys, fretboard reveals, real-music progressions — not decontextualized chord quizzes.
+
+### Drills shipped (v1)
+
+- **Chords** — identify Major / Minor / Dom7 / Maj7 / Min7 in any inversion. Reveal shows the exact voicing of the notes you just heard, on a fretboard diagram you can grab on your real guitar.
+- **Progressions** — identify Pop (I–V–vi–IV), Doo-wop (I–vi–IV–V), Jazz ii–V–I, or 12-bar blues. Random major key with brief tonic priming first.
+
+### Planned next
+
+1. Mode ID — Ionian / Dorian / Mixolydian / Aeolian
+2. Key Identification — play a cadence, pick the tonic
+
+## Stack
+
+Next.js 14 (Pages Router) · React 18 · TypeScript · Antd 5 · Tailwind · Valtio · [smplr](https://github.com/danigb/smplr) (sampled instruments) · [tonal](https://github.com/tonaljs/tonal) (music theory).
+
+Hosted on Vercel.
+
+## Running locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev       # http://localhost:3000
+npm run build     # type-check + ESLint; run before pushing
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project layout
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
-
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
-
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+See `CLAUDE.md` for the operational guide — file map, gotchas, conventions, and how to add a new drill.
