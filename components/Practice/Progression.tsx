@@ -2,15 +2,19 @@ import { Radio, Space } from "antd";
 import { useEffect } from "react";
 import { useSnapshot } from "valtio";
 import { sample } from "lodash";
+import { Chord } from "tonal";
 import { PracticeShell, usePracticeState } from "./components";
 import { FormField } from "./FormField";
 import { MultiSelect } from "./MultiSelect";
+import { Fretboard } from "@/components/Fretboard/Fretboard";
 import { PROGRESSIONS, type ProgressionId } from "@/constants/progressions";
 import {
   NOTE_NAMES,
   buildChordsFromRomans,
   symbolsFromRomans,
+  simplifyChordSymbol,
 } from "@/utils/music";
+import { findVoicing } from "@/utils/fretboard";
 import { playProgression, type Instrument } from "@/utils/audio";
 
 type State = {
@@ -51,12 +55,13 @@ export const Progression = () => {
   };
 
   const play = () => {
-    const def = PROGRESSIONS.find((p) => p.id === current.progressionId);
+    const { key, progressionId } = state.current;
+    const def = PROGRESSIONS.find((p) => p.id === progressionId);
     if (!def) return Promise.resolve();
     const octave =
       state.instrument === "guitar" ? GUITAR_OCTAVE : PIANO_OCTAVE;
-    const chords = buildChordsFromRomans(current.key, def.romans, octave);
-    const tonic = buildChordsFromRomans(current.key, ["I"], octave)[0];
+    const chords = buildChordsFromRomans(key, def.romans, octave);
+    const tonic = buildChordsFromRomans(key, ["I"], octave)[0];
     return playProgression(chords, {
       instrument: state.instrument,
       primingChord: tonic,
@@ -88,13 +93,23 @@ export const Progression = () => {
             <Radio.Button
               key={id}
               value={id}
-              style={
-                isCorrectChoice
+              style={{
+                height: "auto",
+                lineHeight: 1.25,
+                padding: "6px 12px",
+                ...(isCorrectChoice
                   ? { borderColor: "#16a34a", color: "#16a34a" }
-                  : undefined
-              }
+                  : {}),
+              }}
             >
-              {def?.label ?? id}
+              <div className="text-center">
+                <div className="font-medium">{def?.label ?? id}</div>
+                {def?.romanLabel && (
+                  <div className="text-[11px] opacity-70 mt-0.5">
+                    {def.romanLabel}
+                  </div>
+                )}
+              </div>
             </Radio.Button>
           );
         })
@@ -103,18 +118,54 @@ export const Progression = () => {
         const def = PROGRESSIONS.find((p) => p.id === current.progressionId);
         if (!def) return null;
         const symbols = symbolsFromRomans(current.key, def.romans);
-        const uniqueSymbols = Array.from(new Set(symbols));
+        const allNotes = buildChordsFromRomans(current.key, def.romans, 4);
+
+        const uniqueByClean = new Map<string, string[]>();
+        def.romans.forEach((_, i) => {
+          const clean = simplifyChordSymbol(symbols[i]);
+          if (!uniqueByClean.has(clean)) uniqueByClean.set(clean, allNotes[i]);
+        });
+        const cleanSymbols = Array.from(uniqueByClean.keys());
+
         return (
-          <div className="space-y-1 text-base">
-            <div>
-              <span className="font-semibold">{def.label}</span>
-              <span className="text-gray-500 ml-2">
-                in {current.key} major
-              </span>
+          <div className="space-y-3">
+            <div className="text-base">
+              <div>
+                <span className="font-semibold">{def.label}</span>
+                <span className="text-gray-500 ml-2">
+                  in {current.key} major
+                </span>
+              </div>
+              <div className="text-amber-800 font-medium">{def.romanLabel}</div>
+              <div className="text-gray-600 text-sm">
+                {cleanSymbols.join(" · ")}
+              </div>
             </div>
-            <div className="text-amber-800 font-medium">{def.romanLabel}</div>
-            <div className="text-gray-600 text-sm">
-              {uniqueSymbols.join(" · ")}
+            <div className="flex flex-wrap gap-4 justify-center pt-2">
+              {Array.from(uniqueByClean.entries()).map(([sym, notes]) => {
+                const voicing = findVoicing(notes);
+                const root = Chord.get(sym).tonic ?? undefined;
+                return (
+                  <div
+                    key={sym}
+                    className="flex flex-col items-center gap-1.5"
+                  >
+                    <div className="text-sm font-semibold text-stone-700">
+                      {sym}
+                    </div>
+                    {voicing && (
+                      <Fretboard
+                        positions={voicing.positions}
+                        mutes={voicing.mutes}
+                        startFret={voicing.startFret}
+                        numFrets={voicing.numFrets}
+                        highlightRoot={root}
+                        compact
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         );

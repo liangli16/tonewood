@@ -35,25 +35,27 @@ npm run build    # runs type-check + ESLint; ALWAYS run before pushing
 - `components/Practice/components.tsx` — `PracticeShell` + `usePracticeState`. Shared scaffold every drill plugs into.
 - `components/Practice/ChordQuality.tsx` — reference drill; copy this pattern for new ones
 - `components/Practice/Progression.tsx` — progression drill (uses `playProgression` + tonic priming, text-only reveal)
+- `components/Practice/Mode.tsx` — modes drill (tonic-triad priming + scale ascending; scale notes ride through `playProgression` as one-note "chords")
+- `components/Practice/ScaleDegree.tsx` — scale-degree ID drill (I–IV–V–I cadence, rest beat, single test note, 1–7 answer row). Reuses `playProgression` with single-note "chords" and an empty array as a rest beat.
 - `components/Practice/FormField.tsx` · `components/Practice/MultiSelect.tsx` — shared config-bar primitives. **Use these for any per-drill setting row** (label-above-control wrapper + Antd Select with `<Tag>` chips). Standard look across drills.
 - `constants/progressions.ts` — roman-numeral definitions for the 4 progressions
-- `components/Fretboard/Fretboard.tsx` — vertical amber chord diagram (div-based, not SVG). Supports `startFret` (windowed view with `Nfr` label), `numFrets` (adaptive window size — defaults to 5; widen for spread voicings), and `mutes[]` (renders `×` above muted strings).
+- `constants/modes.ts` — the 4 modes (Ionian / Dorian / Mixolydian / Aeolian) with tonal scale name, degrees formula, and tonic-triad quality for priming
+- `components/Fretboard/Fretboard.tsx` — vertical amber chord diagram (div-based, not SVG). Supports `startFret` (windowed view with `Nfr` label), `numFrets` (adaptive window size — defaults to 5; widen for spread voicings or scale charts), `mutes[]` (renders `×` above muted strings), and `compact` (smaller dimensions for laying out multiple diagrams in a row, e.g. progression chord-by-chord reveal).
 - `components/TopNav.tsx` — shared top bar (brand link + page-aware right action). Used by `/` and `/practice`.
-- `utils/music.ts` — tonal wrappers (`buildChordNotes`, `buildChordsFromRomans`, `symbolsFromRomans`, `simplifyNote`, scale/mode helpers, re-exports `Chord/Scale/Mode/Note/Progression`). `simplifyNote` rewrites tonal's enharmonics to sharp/natural form (`C##` → `D`, `E#` → `F`, `Db` → `C#`) — always use it before showing a note to the user.
+- `utils/music.ts` — tonal wrappers (`buildChordNotes`, `buildChordsFromRomans`, `symbolsFromRomans`, `simplifyNote`, `simplifyChordSymbol`, scale/mode helpers, re-exports `Chord/Scale/Mode/Note/Progression`). `simplifyNote` rewrites tonal's enharmonics to sharp/natural form (`C##` → `D`, `E#` → `F`, `Db` → `C#`); `simplifyChordSymbol` does the same for chord symbols (`F##m` → `Gm`, `B#m` → `Cm`, `E#7` → `F7`). Always use these before showing a note or chord name to the user.
 - `utils/audio.ts` — smplr wrapper. Lazy-loads SoundFont (`acoustic_guitar_steel`, `acoustic_grand_piano`) on first use, with browser `CacheStorage` for cross-session caching. Exports `playChord`, `playSequence`, `playProgression`, `preloadInstruments`.
-- `utils/fretboard.ts` — `findVoicing(notes)` returns the tightest playable voicing for the **exact** notes played (including inversion). It assigns one note per consecutive string set, minimizing max fret then span; returns `{ positions, mutes, startFret, numFrets }` for direct rendering. `getChordPositions(notes)` (returns all positions of the chord tones across the neck) is still around for decorative use like the landing-page hero.
+- `utils/fretboard.ts` — `findVoicing(notes)` returns the tightest playable chord voicing (one note per consecutive string set). `findScaleLayout(notes)` returns a single playable scale position for an ordered (typically ascending) list of notes — greedy "next-string-up first" assignment in the smallest fret window that fits, expanding from 5 to up to 10 frets only when necessary; multiple notes per string allowed. Both return a `Fingering` (`{ positions, mutes, startFret, numFrets }`). `getChordPositions(notes, maxFret?)` returns every position of any of the target pitch classes across the neck (used for the landing-page hero). All three pass results through `simplifyNote` so positions display in sharp/natural form.
 - `constants/chords.ts` — `ChordTypeOption` carries `label` (full, used in dropdown menu), `shortLabel` (compact, used as the chip text on the multi-select via `MultiSelect`'s `chipLabel`), and `symbol` (suffix appended to the root for the chord-name reveal like `Cmaj7`)
 - `constants/tuning.ts`
 
 ## What's built (v1)
 
 - Chords drill: ID Major / Minor / Dominant 7 / Maj7 / Min7 in any inversion (root/1st/2nd), with fretboard reveal showing the exact voicing of the played notes.
-- Common Progression drill: ID Pop (I–V–vi–IV) / Doo-wop (I–vi–IV–V) / Jazz ii–V–I / 12-bar blues. Random major key, brief tonic priming, reveal shows roman numerals + chord names in the key.
+- Common Progression drill: ID Pop (I–V–vi–IV) / Doo-wop (I–vi–IV–V) / Jazz turnaround (ii7–V7–Imaj7–vi7) / Blues (I7–IV7–V7–I7). All four progressions are exactly 4 chords so the user can't tell them apart by chord count. Random major key, brief tonic priming, reveal shows roman numerals + chord names + a row of compact chord-fingering diagrams.
+- Modes drill: ID Ionian / Dorian / Mixolydian / Aeolian. Random tonic, priming triad sized to mode quality (M or m), then scale ascending. Reveal shows tonic + mode label + scale notes + scale-degree formula.
+- Scale Degrees drill: hear a I–IV–V–I cadence in a random major key, then a single test note from that scale; identify which degree (1–7) the note was. The relative-pitch / functional-ear-training workhorse.
 
-## What's planned next (priority order)
-
-1. Mode ID — Ionian / Dorian / Mixolydian / Aeolian (the four hobbyists use)
-2. Key Identification — play a cadence, user picks tonic
+**v1 is complete.** Next directions (v2) are open — possibilities: minor-key drills, descending scales, interval ID, voice-leading ID. Talk to the user before scoping any of these.
 
 ## Adding a new drill
 

@@ -11,12 +11,9 @@ A small, opinionated ear-training app for guitarists who are learning music theo
 ### Drills shipped (v1)
 
 - **Chords** — identify Major / Minor / Dom7 / Maj7 / Min7 in any inversion. Reveal shows the exact voicing of the notes you just heard, on a fretboard diagram you can grab on your real guitar.
-- **Progressions** — identify Pop (I–V–vi–IV), Doo-wop (I–vi–IV–V), Jazz ii–V–I, or 12-bar blues. Random major key with brief tonic priming first.
-
-### Planned next
-
-1. Mode ID — Ionian / Dorian / Mixolydian / Aeolian
-2. Key Identification — play a cadence, pick the tonic
+- **Progressions** — identify Pop (I–V–vi–IV), Doo-wop (I–vi–IV–V), Jazz turnaround (ii7–V7–Imaj7–vi7), or Blues (I7–IV7–V7–I7). All four are exactly 4 chords so you can't cheat by counting. Random major key with brief tonic priming first; reveal shows compact chord-fingering diagrams.
+- **Modes** — identify Ionian / Dorian / Mixolydian / Aeolian. Tonic-triad priming, then the scale ascending. Reveal shows the scale-degree formula.
+- **Scale Degrees** — hear a I–IV–V–I cadence, then a single note from that key. Name the scale degree (1–7). The core relative-pitch drill — trains the ear that lets you find any note's place inside a key.
 
 ## Stack
 

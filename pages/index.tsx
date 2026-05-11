@@ -34,13 +34,15 @@ const DRILLS: Drill[] = [
     key: "modes",
     title: "Modes",
     blurb: "Ionian, Dorian, Mixolydian, Aeolian — the four hobbyists actually use.",
-    status: "coming",
+    status: "ready",
+    href: "/practice#mode",
   },
   {
-    key: "key-id",
-    title: "Key Identification",
-    blurb: "Hear a cadence, pick the tonic. Train your ear on key centers.",
-    status: "coming",
+    key: "scale-degree",
+    title: "Scale Degrees",
+    blurb: "Hear a cadence, then a single note. Name the scale degree.",
+    status: "ready",
+    href: "/practice#scale-degree",
   },
 ];
 
@@ -118,7 +120,7 @@ export default function Home() {
                 What you&apos;ll train
               </h2>
               <span className="text-sm text-stone-500 hidden sm:inline">
-                Two drills ready · two on the way
+                Four drills ready
               </span>
             </div>
 

@@ -27,13 +27,18 @@ const fretToNote = (openNote: string, fret: number): string => {
   return Midi.midiToNoteName(midi + fret);
 };
 
-export const getChordPositions = (chordNotes: string[]): FretPosition[] => {
-  const targetPCs = new Set(chordNotes.map((n) => Note.pitchClass(n)));
+export const getChordPositions = (
+  chordNotes: string[],
+  maxFret: number = FRET_COUNT
+): FretPosition[] => {
+  const targetPCs = new Set(
+    chordNotes.map((n) => Note.pitchClass(simplifyNote(n)))
+  );
   const positions: FretPosition[] = [];
 
   STANDARD_TUNING.forEach((openNote, stringIdx) => {
-    for (let fret = 0; fret <= FRET_COUNT; fret++) {
-      const note = fretToNote(openNote, fret);
+    for (let fret = 0; fret <= maxFret; fret++) {
+      const note = simplifyNote(fretToNote(openNote, fret));
       const pc = Note.pitchClass(note);
       if (targetPCs.has(pc)) {
         positions.push({ string: stringIdx, fret, note, pitchClass: pc });
@@ -116,4 +121,93 @@ export const findVoicing = (notes: string[]): Fingering | null => {
 
   candidates.sort((a, b) => a.maxFret - b.maxFret || a.span - b.span);
   return slotsToFingering(candidates[0].slots);
+};
+
+// Find a single playable position to display an ascending scale (or any
+// ordered list of notes). Each note gets its own (string, fret) — multiple
+// notes can share a string at different frets, unlike findVoicing.
+//
+// Greedy: prefer the next-higher string at low fret over staying on the same
+// string at high fret. This produces the natural box patterns guitarists use.
+//
+// Tries 5-fret windows first (the smallest), expanding to 6/7/... only if the
+// scale span doesn't fit. Returns null if even a 10-fret window can't hold it.
+export const findScaleLayout = (notes: string[]): Fingering | null => {
+  if (!notes.length) return null;
+
+  const midis = notes
+    .map((n) => Midi.toMidi(n))
+    .filter((m): m is number => m !== null);
+  if (midis.length !== notes.length) return null;
+
+  for (let windowSize = BASE_NUM_FRETS; windowSize <= 10; windowSize++) {
+    const maxStart = MAX_REASONABLE_FRET - windowSize + 1;
+    for (let startFret = 0; startFret <= maxStart; startFret++) {
+      const positionsPerNote: { string: number; fret: number }[][] = midis.map(
+        (midi) => {
+          const cands: { string: number; fret: number }[] = [];
+          for (let s = 0; s < 6; s++) {
+            const fret = midi - TUNING_MIDI[s];
+            if (fret < 0 || fret > MAX_REASONABLE_FRET) continue;
+            if (fret >= startFret && fret < startFret + windowSize) {
+              cands.push({ string: s, fret });
+            }
+          }
+          return cands;
+        }
+      );
+
+      if (positionsPerNote.some((c) => c.length === 0)) continue;
+
+      let prevString = -1;
+      const slots: Slot[] = [];
+
+      for (let i = 0; i < midis.length; i++) {
+        const cands = positionsPerNote[i];
+        // Prefer next-string-up; if not, same string with higher fret;
+        // last resort: any candidate (sorted by string then fret).
+        const sorted = [...cands].sort((a, b) => {
+          const aAdvance = a.string > prevString ? 0 : 1;
+          const bAdvance = b.string > prevString ? 0 : 1;
+          if (aAdvance !== bAdvance) return aAdvance - bAdvance;
+          if (a.string !== b.string) return a.string - b.string;
+          return a.fret - b.fret;
+        });
+        const pick = sorted[0];
+        slots.push({
+          stringIdx: pick.string,
+          fret: pick.fret,
+          note: notes[i],
+        });
+        prevString = pick.string;
+      }
+
+      // Build a Fingering. frets[] gets loose-filled (first-seen per string)
+      // since scales have multiple notes per string; nothing in the scale
+      // path consumes frets[] anyway.
+      const frets: (number | null)[] = Array(6).fill(null);
+      const positions: FretPosition[] = [];
+
+      slots.forEach(({ stringIdx, fret, note }) => {
+        if (frets[stringIdx] === null) frets[stringIdx] = fret;
+        const displayNote = simplifyNote(note);
+        positions.push({
+          string: stringIdx,
+          fret,
+          note: displayNote,
+          pitchClass: Note.pitchClass(displayNote),
+        });
+      });
+
+      return {
+        frets,
+        positions,
+        mutes: Array(6).fill(false),
+        startFret: startFret > 0 ? startFret : 0,
+        numFrets: windowSize,
+      };
+    }
+  }
+
+  return null;
 };

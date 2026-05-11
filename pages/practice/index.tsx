@@ -3,6 +3,8 @@ import Head from "next/head";
 import { useEffect, useState } from "react";
 import { ChordQuality } from "@/components/Practice/ChordQuality";
 import { Progression } from "@/components/Practice/Progression";
+import { Mode } from "@/components/Practice/Mode";
+import { ScaleDegree } from "@/components/Practice/ScaleDegree";
 import { TopNav } from "@/components/TopNav";
 import { preloadInstruments } from "@/utils/audio";
 
@@ -51,6 +53,16 @@ const Practice = () => {
                 label: "Progression",
                 key: "progression",
                 children: <Progression />,
+              },
+              {
+                label: "Modes",
+                key: "mode",
+                children: <Mode />,
+              },
+              {
+                label: "Scale Degrees",
+                key: "scale-degree",
+                children: <ScaleDegree />,
               },
             ]}
           />

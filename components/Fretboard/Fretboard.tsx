@@ -13,10 +13,31 @@ type Props = {
   startFret?: number;
   numFrets?: number;
   mutes?: boolean[];
+  compact?: boolean;
 };
 
-const STRING_W = 44;
-const ROW_H = 36;
+const SIZE = {
+  default: {
+    stringW: 44,
+    rowH: 36,
+    gutterW: 28,
+    dotClass: "w-7 h-7",
+    dotTextClass: "text-xs",
+    muteClass: "text-base",
+    openLetterClass: "text-[11px]",
+    fretGutterClass: "text-xs",
+  },
+  compact: {
+    stringW: 30,
+    rowH: 26,
+    gutterW: 22,
+    dotClass: "w-5 h-5",
+    dotTextClass: "text-[10px]",
+    muteClass: "text-sm",
+    openLetterClass: "text-[9px]",
+    fretGutterClass: "text-[10px]",
+  },
+};
 
 export const Fretboard = ({
   positions,
@@ -24,6 +45,7 @@ export const Fretboard = ({
   startFret = 0,
   numFrets = FRET_COUNT,
   mutes,
+  compact = false,
 }: Props) => {
   const findPosition = (stringIdx: number, fret: number) =>
     positions.find((p) => p.string === stringIdx && p.fret === fret);
@@ -32,17 +54,22 @@ export const Fretboard = ({
   const fretAtRow = (rowIdx: number) =>
     isWindowed ? startFret + rowIdx : rowIdx + 1;
 
+  const s = compact ? SIZE.compact : SIZE.default;
+
   return (
     <div className="flex justify-center select-none">
       <div className="flex bg-stone-50 rounded-md">
         {/* Fret number gutter */}
         <div
-          className="flex flex-col items-center pr-2 text-xs text-amber-800 font-medium"
-          style={{ width: 28 }}
+          className={classNames(
+            "flex flex-col items-center pr-2 text-amber-800 font-medium",
+            s.fretGutterClass
+          )}
+          style={{ width: s.gutterW }}
         >
           <div
             className="flex items-center justify-center"
-            style={{ height: ROW_H }}
+            style={{ height: s.rowH }}
           >
             {isWindowed ? `${startFret}fr` : ""}
           </div>
@@ -50,7 +77,7 @@ export const Fretboard = ({
             <div
               key={i}
               className="flex items-center justify-center"
-              style={{ height: ROW_H }}
+              style={{ height: s.rowH }}
             >
               {fretAtRow(i)}
             </div>
@@ -62,7 +89,7 @@ export const Fretboard = ({
           {/* Position marker dots overlay */}
           <div
             className="absolute inset-x-0 pointer-events-none flex flex-col items-center"
-            style={{ top: ROW_H }}
+            style={{ top: s.rowH }}
           >
             {Array.from({ length: numFrets }).map((_, fretIdx) => {
               const fret = fretAtRow(fretIdx);
@@ -72,7 +99,7 @@ export const Fretboard = ({
                 <div
                   key={fret}
                   className="flex items-center justify-center w-full"
-                  style={{ height: ROW_H }}
+                  style={{ height: s.rowH }}
                 >
                   {isSingle && (
                     <div className="w-2.5 h-2.5 rounded-full bg-amber-600/30" />
@@ -80,7 +107,7 @@ export const Fretboard = ({
                   {isDouble && (
                     <div
                       className="flex justify-between"
-                      style={{ width: STRING_W * 3 }}
+                      style={{ width: s.stringW * 3 }}
                     >
                       <div className="w-2.5 h-2.5 rounded-full bg-amber-600/30" />
                       <div className="w-2.5 h-2.5 rounded-full bg-amber-600/30" />
@@ -101,7 +128,7 @@ export const Fretboard = ({
                   stringIdx < STANDARD_TUNING.length - 1 &&
                     "border-r border-amber-200/60"
                 )}
-                style={{ width: STRING_W }}
+                style={{ width: s.stringW }}
               >
                 {/* Top row: open-string row (open mode) or above-the-window (windowed mode) */}
                 <div
@@ -111,12 +138,17 @@ export const Fretboard = ({
                       ? "border-b border-stone-400/60"
                       : "border-b-[3px] border-stone-700"
                   )}
-                  style={{ height: ROW_H }}
+                  style={{ height: s.rowH }}
                 >
                   {(() => {
                     if (mutes && mutes[stringIdx]) {
                       return (
-                        <span className="text-stone-500 text-base font-semibold leading-none">
+                        <span
+                          className={classNames(
+                            "text-stone-500 font-semibold leading-none",
+                            s.muteClass
+                          )}
+                        >
                           ×
                         </span>
                       );
@@ -129,7 +161,9 @@ export const Fretboard = ({
                       return (
                         <div
                           className={classNames(
-                            "z-20 w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm",
+                            "z-20 rounded-full flex items-center justify-center text-white font-bold shadow-sm",
+                            s.dotClass,
+                            s.dotTextClass,
                             isRoot ? "bg-rose-600" : "bg-amber-700"
                           )}
                         >
@@ -139,7 +173,12 @@ export const Fretboard = ({
                     }
                     if (mutes) return null;
                     return (
-                      <span className="text-[11px] text-stone-500 font-medium">
+                      <span
+                        className={classNames(
+                          "text-stone-500 font-medium",
+                          s.openLetterClass
+                        )}
+                      >
                         {open.replace(/\d+$/, "")}
                       </span>
                     );
@@ -156,13 +195,15 @@ export const Fretboard = ({
                     <div
                       key={fret}
                       className="relative w-full flex items-center justify-center border-b border-amber-200/70"
-                      style={{ height: ROW_H }}
+                      style={{ height: s.rowH }}
                     >
                       <div className="absolute inset-y-0 w-[2px] bg-stone-500/60" />
                       {p && (
                         <div
                           className={classNames(
-                            "z-20 w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm",
+                            "z-20 rounded-full flex items-center justify-center text-white font-bold shadow-sm",
+                            s.dotClass,
+                            s.dotTextClass,
                             isRoot ? "bg-rose-600" : "bg-amber-700"
                           )}
                         >

@@ -75,6 +75,17 @@ export const simplifyNote = (note: string): string => {
   return Midi.midiToNoteName(midi, { sharps: true }) ?? note;
 };
 
+// Same idea for chord symbols. Progression.fromRomanNumerals can return
+// "F##m" or "B#" or "E#7" for sharp keys; we want "Gm", "C", "F7".
+// Parses tonic via tonal, simplifies the tonic, reattaches the suffix.
+export const simplifyChordSymbol = (symbol: string): string => {
+  const c = Chord.get(symbol);
+  if (!c.tonic) return symbol;
+  const cleanTonic = simplifyNote(`${c.tonic}4`).replace(/-?\d+$/, "");
+  const suffix = c.symbol.slice(c.tonic.length);
+  return cleanTonic + suffix;
+};
+
 export const buildChordsFromRomans = (
   key: string,
   romans: string[],
