@@ -3,7 +3,12 @@ import { useEffect } from "react";
 import { useSnapshot } from "valtio";
 import { sample } from "lodash";
 import { Chord } from "tonal";
-import { PracticeShell, usePracticeState } from "./components";
+import {
+  PracticeShell,
+  usePracticeState,
+  useDrillProgressReporter,
+  type DrillEmbedProps,
+} from "./components";
 import { FormField } from "./FormField";
 import { MultiSelect } from "./MultiSelect";
 import { Fretboard } from "@/components/Fretboard/Fretboard";
@@ -29,10 +34,17 @@ type State = {
   };
 };
 
+export type ProgressionConfig = Partial<
+  Pick<State, "progressions" | "instrument">
+>;
+
 const GUITAR_OCTAVE = 3;
 const PIANO_OCTAVE = 4;
 
-export const Progression = () => {
+export const Progression = ({
+  lock,
+  onProgress,
+}: DrillEmbedProps<ProgressionConfig> = {}) => {
   const { state, resetStats } = usePracticeState<State>(
     () => ({
       progressions: ["pop", "doowop", "jazz", "blues"],
@@ -42,10 +54,13 @@ export const Progression = () => {
       current: { key: "C", progressionId: "pop", answer: "" },
     }),
     "TONEWOOD_PROGRESSION_CONFIG",
-    ["progressions", "instrument"]
+    ["progressions", "instrument"],
+    lock
   );
 
-  const { progressions, instrument, current } = useSnapshot(state);
+  const snap = useSnapshot(state);
+  const { progressions, instrument, current } = snap;
+  useDrillProgressReporter(snap.pass, snap.all, onProgress);
 
   const newQuestion = () => {
     state.current.key = sample(NOTE_NAMES) ?? "C";
@@ -79,6 +94,8 @@ export const Progression = () => {
       title="Common Progression"
       state={state}
       prompt="Which progression did you hear?"
+      hideExtra={!!lock}
+      hideHeaderScore={!!lock}
       onPlay={play}
       onNewQuestion={newQuestion}
       getCorrectAnswer={() => current.progressionId}

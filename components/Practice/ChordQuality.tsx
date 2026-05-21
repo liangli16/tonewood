@@ -2,7 +2,12 @@ import { Radio, Space, Slider } from "antd";
 import { useEffect } from "react";
 import { useSnapshot } from "valtio";
 import { sample } from "lodash";
-import { PracticeShell, usePracticeState } from "./components";
+import {
+  PracticeShell,
+  usePracticeState,
+  useDrillProgressReporter,
+  type DrillEmbedProps,
+} from "./components";
 import { FormField } from "./FormField";
 import { MultiSelect } from "./MultiSelect";
 import { Fretboard } from "@/components/Fretboard/Fretboard";
@@ -33,7 +38,14 @@ type State = {
   };
 };
 
-export const ChordQuality = () => {
+export type ChordQualityConfig = Partial<
+  Pick<State, "qualities" | "inversions" | "arpeggiate" | "instrument">
+>;
+
+export const ChordQuality = ({
+  lock,
+  onProgress,
+}: DrillEmbedProps<ChordQualityConfig> = {}) => {
   const { state, resetStats } = usePracticeState<State>(
     () => ({
       qualities: ["M", "m", "7", "M7", "m7"],
@@ -51,11 +63,13 @@ export const ChordQuality = () => {
       },
     }),
     "TONEWOOD_CHORD_QUALITY_CONFIG",
-    ["qualities", "inversions", "arpeggiate", "instrument"]
+    ["qualities", "inversions", "arpeggiate", "instrument"],
+    lock
   );
 
-  const { qualities, inversions, arpeggiate, instrument, current } =
-    useSnapshot(state);
+  const snap = useSnapshot(state);
+  const { qualities, inversions, arpeggiate, instrument, current } = snap;
+  useDrillProgressReporter(snap.pass, snap.all, onProgress);
 
   const newChord = () => {
     let root = "C";
@@ -109,6 +123,8 @@ export const ChordQuality = () => {
       title="Chords"
       state={state}
       prompt="Which chord did you hear?"
+      hideExtra={!!lock}
+      hideHeaderScore={!!lock}
       onPlay={play}
       onNewQuestion={newChord}
       onOptionPlay={(q) => playOption(q as ChordTypeId)}

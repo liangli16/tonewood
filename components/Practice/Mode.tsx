@@ -2,7 +2,12 @@ import { Radio, Space } from "antd";
 import { useEffect } from "react";
 import { useSnapshot } from "valtio";
 import { sample } from "lodash";
-import { PracticeShell, usePracticeState } from "./components";
+import {
+  PracticeShell,
+  usePracticeState,
+  useDrillProgressReporter,
+  type DrillEmbedProps,
+} from "./components";
 import { FormField } from "./FormField";
 import { MultiSelect } from "./MultiSelect";
 import { Fretboard } from "@/components/Fretboard/Fretboard";
@@ -29,12 +34,17 @@ type State = {
   };
 };
 
+export type ModeConfig = Partial<Pick<State, "modes" | "instrument">>;
+
 const GUITAR_OCTAVE = 3;
 const PIANO_OCTAVE = 4;
 
 const stripOctave = (note: string) => note.replace(/-?\d+$/, "");
 
-export const Mode = () => {
+export const Mode = ({
+  lock,
+  onProgress,
+}: DrillEmbedProps<ModeConfig> = {}) => {
   const { state, resetStats } = usePracticeState<State>(
     () => ({
       modes: ["ionian", "dorian", "mixolydian", "aeolian"],
@@ -44,10 +54,13 @@ export const Mode = () => {
       current: { tonic: "C", modeId: "ionian", answer: "" },
     }),
     "TONEWOOD_MODE_CONFIG",
-    ["modes", "instrument"]
+    ["modes", "instrument"],
+    lock
   );
 
-  const { modes, instrument, current } = useSnapshot(state);
+  const snap = useSnapshot(state);
+  const { modes, instrument, current } = snap;
+  useDrillProgressReporter(snap.pass, snap.all, onProgress);
 
   const newQuestion = () => {
     state.current.tonic = sample(NOTE_NAMES) ?? "C";
@@ -90,6 +103,8 @@ export const Mode = () => {
       title="Modes"
       state={state}
       prompt="Which mode did you hear?"
+      hideExtra={!!lock}
+      hideHeaderScore={!!lock}
       onPlay={play}
       onNewQuestion={newQuestion}
       getCorrectAnswer={() => current.modeId}

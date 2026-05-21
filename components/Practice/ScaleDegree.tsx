@@ -2,7 +2,12 @@ import { Radio, Space } from "antd";
 import { useEffect } from "react";
 import { useSnapshot } from "valtio";
 import { sample } from "lodash";
-import { PracticeShell, usePracticeState } from "./components";
+import {
+  PracticeShell,
+  usePracticeState,
+  useDrillProgressReporter,
+  type DrillEmbedProps,
+} from "./components";
 import { FormField } from "./FormField";
 import { MultiSelect } from "./MultiSelect";
 import {
@@ -25,6 +30,8 @@ type State = {
   };
 };
 
+export type ScaleDegreeConfig = Partial<Pick<State, "degrees" | "instrument">>;
+
 const ALL_DEGREES = [1, 2, 3, 4, 5, 6, 7];
 const CADENCE = ["I", "IV", "V", "I"];
 const GUITAR_OCTAVE = 3;
@@ -33,7 +40,10 @@ const CHORD_DURATION = 0.7;
 
 const stripOctave = (note: string) => note.replace(/-?\d+$/, "");
 
-export const ScaleDegree = () => {
+export const ScaleDegree = ({
+  lock,
+  onProgress,
+}: DrillEmbedProps<ScaleDegreeConfig> = {}) => {
   const { state, resetStats } = usePracticeState<State>(
     () => ({
       degrees: [...ALL_DEGREES],
@@ -43,10 +53,13 @@ export const ScaleDegree = () => {
       current: { key: "C", degree: 1, answer: 0 },
     }),
     "TONEWOOD_SCALE_DEGREE_CONFIG",
-    ["degrees", "instrument"]
+    ["degrees", "instrument"],
+    lock
   );
 
-  const { degrees, instrument, current } = useSnapshot(state);
+  const snap = useSnapshot(state);
+  const { degrees, instrument, current } = snap;
+  useDrillProgressReporter(snap.pass, snap.all, onProgress);
 
   const newQuestion = () => {
     state.current.key = sample(NOTE_NAMES) ?? "C";
@@ -85,6 +98,8 @@ export const ScaleDegree = () => {
       title="Scale Degrees"
       state={state}
       prompt="Which scale degree was the last note?"
+      hideExtra={!!lock}
+      hideHeaderScore={!!lock}
       onPlay={play}
       onNewQuestion={newQuestion}
       getCorrectAnswer={() => current.degree}
