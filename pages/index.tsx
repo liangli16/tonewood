@@ -81,18 +81,23 @@ export default function Home() {
                 quizzes.
               </p>
               <div className="flex flex-wrap items-center gap-4 pt-2">
-                <Link href="/practice">
+                <Link href="/coach">
                   <Button type="primary" size="large">
-                    Start practicing
+                    Talk to the coach
                   </Button>
                 </Link>
-                <a
-                  href="#drills"
+                <Link
+                  href="/practice"
                   className="text-sm text-stone-600 hover:text-amber-800 transition-colors"
                 >
-                  See what you&apos;ll train ↓
-                </a>
+                  Or browse drills →
+                </Link>
               </div>
+              <p className="text-xs text-stone-500 max-w-md">
+                <span className="font-medium text-stone-600">New:</span> a
+                preview of the AI coach that&apos;ll guide your practice. Real AI
+                lands next; for now the flow is scripted.
+              </p>
             </div>
 
             <div className="flex justify-center md:justify-end">

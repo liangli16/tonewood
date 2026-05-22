@@ -30,9 +30,14 @@ npm run build    # runs type-check + ESLint; ALWAYS run before pushing
 
 ## File map
 
-- `pages/index.tsx` — landing page (hero, drill cards, fretboard preview). Reuses `Fretboard` for the hero visual.
+- `pages/index.tsx` — landing page (hero, drill cards, fretboard preview). Hero primary CTA leads to `/coach` (the conversational coach preview); "Or browse drills" sends to `/practice`. Reuses `Fretboard` for the hero visual.
+- `pages/coach/index.tsx` — conversational coach surface. Renders a message stream (coach bubbles + user bubbles), input affordances (button choices OR activity cards), and a "Reset session" / "Start new session" control. Reads from `useCoachMemory`; calls `nextStubTurn` after every user reply / activity completion to advance.
 - `pages/practice/index.tsx` — Tabs container, one tab per drill. Calls `preloadInstruments()` on mount so samples are warm by the time the user clicks Play.
-- `components/Practice/components.tsx` — `PracticeShell` + `usePracticeState`. Shared scaffold every drill plugs into.
+- `components/Practice/components.tsx` — `PracticeShell` + `usePracticeState`. Shared scaffold every drill plugs into. **Also exports the drill-embedding API**: `DrillEmbedProps<TConfig>` + `useDrillProgressReporter`. Every drill component accepts optional `lock` (locks its config + skips localStorage hydration; the embedder owns the config) and `onProgress` (fires `{attempts, correct}` on every answer). `PracticeShell` accepts `hideExtra` and `hideHeaderScore` so the embedder can suppress the per-drill config bar and inline running score. This is what `pages/coach/index.tsx` uses to embed a drill inside a coach session.
+- `components/Coach/CoachMessage.tsx` — single message bubble (coach left, user right). Tiny inline markdown for paragraph breaks + **bold**.
+- `components/Coach/BackingTrackCard.tsx` — plays a chord progression (`buildChordsFromRomans` + `playProgression`); shows a prompt and a Done button that emits a `{kind:"backing-track",done:true}` activity result.
+- `components/Coach/DrillCard.tsx` — wraps the appropriate drill via the embed API (`lock` + `onProgress`), tracks running attempts/correct, surfaces a Done button once the user has answered enough to advance.
+- `components/Coach/ReflectionCard.tsx` — multi-question form (radio choices or short text); emits `{kind:"reflection",answers:{id→value}}`.
 - `components/Practice/ChordQuality.tsx` — reference drill; copy this pattern for new ones
 - `components/Practice/Progression.tsx` — progression drill (uses `playProgression` + tonic priming, text-only reveal)
 - `components/Practice/Mode.tsx` — modes drill (tonic-triad priming + scale ascending; scale notes ride through `playProgression` as one-note "chords")
@@ -43,6 +48,8 @@ npm run build    # runs type-check + ESLint; ALWAYS run before pushing
 - `components/Fretboard/Fretboard.tsx` — vertical amber chord diagram (div-based, not SVG). Supports `startFret` (windowed view with `Nfr` label), `numFrets` (adaptive window size — defaults to 5; widen for spread voicings or scale charts), `mutes[]` (renders `×` above muted strings), and `compact` (smaller dimensions for laying out multiple diagrams in a row, e.g. progression chord-by-chord reveal).
 - `components/TopNav.tsx` — shared top bar (brand link + page-aware right action). Used by `/` and `/practice`.
 - `utils/music.ts` — tonal wrappers (`buildChordNotes`, `buildChordsFromRomans`, `symbolsFromRomans`, `simplifyNote`, `simplifyChordSymbol`, scale/mode helpers, re-exports `Chord/Scale/Mode/Note/Progression`). `simplifyNote` rewrites tonal's enharmonics to sharp/natural form (`C##` → `D`, `E#` → `F`, `Db` → `C#`); `simplifyChordSymbol` does the same for chord symbols (`F##m` → `Gm`, `B#m` → `Cm`, `E#7` → `F7`). Always use these before showing a note or chord name to the user.
+- `utils/coachMemory.ts` — Valtio + localStorage backing for the conversational coach: `transcript` (current session messages), `profile` (free-form notes the coach has accumulated about the user — empty in stub mode), `sessions` (archived past sessions). Also the shared **type contract** for the coach: `Message`, `CoachTurn`, `Activity` (one of `drill` / `backing-track` / `reflection`), `ActivityResult`. The same contract the future LLM API route will satisfy.
+- `utils/coachStub.ts` — deterministic state machine. `nextStubTurn(transcript)` walks the transcript, finds the last coach `stubNode`, and emits the next `CoachTurn`. **Designed to be swapped wholesale** for `await fetch('/api/coach/turn', {...})` once the Anthropic API key is in place; the rest of the coach UI doesn't change.
 - `utils/audio.ts` — smplr wrapper. Lazy-loads SoundFont (`acoustic_guitar_steel`, `acoustic_grand_piano`) on first use, with browser `CacheStorage` for cross-session caching. Exports `playChord`, `playSequence`, `playProgression`, `preloadInstruments`.
 - `utils/fretboard.ts` — `findVoicing(notes)` returns the tightest playable chord voicing (one note per consecutive string set). `findScaleLayout(notes)` returns a single playable scale position for an ordered (typically ascending) list of notes — greedy "next-string-up first" assignment in the smallest fret window that fits, expanding from 5 to up to 10 frets only when necessary; multiple notes per string allowed. Both return a `Fingering` (`{ positions, mutes, startFret, numFrets }`). `getChordPositions(notes, maxFret?)` returns every position of any of the target pitch classes across the neck (used for the landing-page hero). All three pass results through `simplifyNote` so positions display in sharp/natural form.
 - `constants/chords.ts` — `ChordTypeOption` carries `label` (full, used in dropdown menu), `shortLabel` (compact, used as the chip text on the multi-select via `MultiSelect`'s `chipLabel`), and `symbol` (suffix appended to the root for the chord-name reveal like `Cmaj7`)
@@ -55,7 +62,17 @@ npm run build    # runs type-check + ESLint; ALWAYS run before pushing
 - Modes drill: ID Ionian / Dorian / Mixolydian / Aeolian. Random tonic, priming triad sized to mode quality (M or m), then scale ascending. Reveal shows tonic + mode label + scale notes + scale-degree formula.
 - Scale Degrees drill: hear a I–IV–V–I cadence in a random major key, then a single test note from that scale; identify which degree (1–7) the note was. The relative-pitch / functional-ear-training workhorse.
 
-**v1 is complete.** Next directions (v2) are open — possibilities: minor-key drills, descending scales, interval ID, voice-leading ID. Talk to the user before scoping any of these.
+## v2 in progress — Conversational Coach (feature branch)
+
+Branch `feat/coach-conversational` adds an AI-coach surface on top of v1's drills. The MVP **runs without any API key** — `utils/coachStub.ts` is a deterministic state machine standing in for the LLM. Same `CoachTurn` shape the real LLM will return; swap-only-the-engine when an Anthropic key is added.
+
+Loop: coach greets → asks open question → user picks a choice → coach proposes an activity (drill / backing-track + prompt / reflection) → user does it → coach reads the result and proposes the next step → eventually wraps up + archives the session.
+
+Opening focus: improvisation guidance, anchored on "I feel lost on the fretboard." The stub script runs ~12 nodes covering diagnose → target chord-tone-targeting → backing-track exercise → reflect → branch to either harder backing track or a Scale-Degree drill → wrap up.
+
+When the API key lands: add `pages/api/coach/turn.ts` that calls Anthropic; have `pages/coach/index.tsx` fetch from there instead of calling `nextStubTurn` synchronously. Same I/O contract; no other code changes.
+
+A prior curriculum-shaped coach was attempted on `feat/coach-mvp` and abandoned as too textbook-y; that branch is kept as reference but should not be merged.
 
 ## Adding a new drill
 
