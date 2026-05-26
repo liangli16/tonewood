@@ -1,7 +1,7 @@
 import Head from "next/head";
-import { Button } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { TopNav } from "@/components/TopNav";
+import { Button } from "@/components/ui/Button";
 import { CoachMessage } from "@/components/Coach/CoachMessage";
 import { BackingTrackCard } from "@/components/Coach/BackingTrackCard";
 import { DrillCard } from "@/components/Coach/DrillCard";
@@ -208,22 +208,22 @@ const CoachPage = () => {
       <Head>
         <title>Coach — Tonewood</title>
       </Head>
-      <div className="min-h-screen bg-stone-50 text-stone-800">
+      <div className="min-h-screen bg-stone-50 text-stone-900">
         <TopNav />
         <div className="px-4 md:px-12 max-w-3xl mx-auto pb-32">
-          <div className="pt-2 pb-4 flex items-baseline justify-between gap-4">
+          <div className="pt-4 pb-6 flex items-baseline justify-between gap-4">
             <div>
-              <p className="text-xs font-medium tracking-[0.2em] uppercase text-amber-800">
+              <p className="text-[11px] font-medium tracking-[0.2em] uppercase text-amber-800">
                 Coach
               </p>
-              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight mt-1">
+              <h1 className="text-3xl md:text-4xl font-semibold tracking-tight mt-1">
                 Today&apos;s session
               </h1>
             </div>
             <button
               onClick={onResetSession}
               disabled={thinking}
-              className="text-xs text-stone-500 hover:text-amber-800 transition-colors disabled:opacity-40"
+              className="text-xs text-stone-500 hover:text-stone-900 transition-colors disabled:opacity-40"
             >
               Reset session
             </button>
@@ -252,8 +252,10 @@ const CoachPage = () => {
 
             {thinking && (
               <div className="flex justify-start">
-                <div className="rounded-2xl bg-white border border-stone-200 px-4 py-3 text-stone-500 text-sm italic">
-                  Coach is thinking…
+                <div className="rounded-2xl bg-white border border-stone-200 px-4 py-3 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-stone-400 animate-pulse [animation-delay:0ms]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-stone-400 animate-pulse [animation-delay:150ms]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-stone-400 animate-pulse [animation-delay:300ms]" />
                 </div>
               </div>
             )}
@@ -261,11 +263,11 @@ const CoachPage = () => {
 
           {apiError && (
             <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50/60 p-4">
-              <div className="text-xs font-medium tracking-[0.2em] uppercase text-rose-700 mb-1">
+              <p className="text-[11px] font-medium tracking-[0.2em] uppercase text-rose-700 mb-1">
                 Hiccup
-              </div>
-              <p className="text-sm text-stone-700 mb-3">{apiError}</p>
-              <Button onClick={onRetry} size="middle" disabled={thinking}>
+              </p>
+              <p className="text-sm text-stone-800 mb-3">{apiError}</p>
+              <Button variant="secondary" onClick={onRetry} disabled={thinking}>
                 Try again
               </Button>
             </div>
@@ -281,9 +283,8 @@ const CoachPage = () => {
                 {activeChoices.map((c) => (
                   <Button
                     key={c}
+                    variant="secondary"
                     onClick={() => onChoice(c)}
-                    type="default"
-                    size="middle"
                   >
                     {c}
                   </Button>
@@ -304,7 +305,7 @@ const CoachPage = () => {
 
           {!thinking && sessionEnded && (
             <div className="mt-6">
-              <Button type="primary" size="middle" onClick={onStartNewSession}>
+              <Button variant="primary" onClick={onStartNewSession}>
                 Start a new session →
               </Button>
             </div>

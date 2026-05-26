@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Button } from "antd";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import type { BackingTrackActivity, ActivityResult } from "@/utils/coachMemory";
 import { playProgression } from "@/utils/audio";
 import { buildChordsFromRomans, symbolsFromRomans } from "@/utils/music";
@@ -28,23 +29,28 @@ export const BackingTrackCard = ({ activity, done, onDone }: Props) => {
   };
 
   return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50/30 p-4 my-2">
-      <div className="text-xs font-medium tracking-[0.2em] uppercase text-amber-800 mb-2">
+    <Card className="p-5 my-2">
+      <p className="text-[11px] font-medium tracking-[0.2em] uppercase text-amber-800 mb-2">
         Backing track · key of {activity.key}
-      </div>
-      <div className="font-medium text-stone-700 text-sm mb-2">
+      </p>
+      <div className="font-medium text-stone-800 text-sm mb-2">
         {symbols.join(" — ")}
       </div>
-      <p className="text-stone-600 text-sm mb-3">{activity.prompt}</p>
+      <p className="text-stone-600 text-sm mb-4 leading-relaxed">
+        {activity.prompt}
+      </p>
       <div className="flex flex-wrap gap-2 items-center">
-        <Button onClick={play} disabled={playing || done} size="middle">
+        <Button
+          variant="secondary"
+          onClick={play}
+          disabled={playing || done}
+        >
           {playing ? "Playing…" : "Play"}
         </Button>
         {!done && (
           <Button
-            type="primary"
+            variant="primary"
             onClick={() => onDone({ kind: "backing-track", done: true })}
-            size="middle"
           >
             Done →
           </Button>
@@ -55,6 +61,6 @@ export const BackingTrackCard = ({ activity, done, onDone }: Props) => {
           </span>
         )}
       </div>
-    </div>
+    </Card>
   );
 };

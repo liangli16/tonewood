@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Button } from "antd";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import {
   ChordQuality,
   type ChordQualityConfig,
@@ -43,10 +44,7 @@ const renderDrill = (
       );
     case "mode":
       return (
-        <Mode
-          lock={activity.config as ModeConfig}
-          onProgress={onProgress}
-        />
+        <Mode lock={activity.config as ModeConfig} onProgress={onProgress} />
       );
     case "scale-degree":
       return (
@@ -66,34 +64,38 @@ export const DrillCard = ({ activity, done, onDone }: Props) => {
   const ready = progress.attempts >= 3 && !done;
 
   return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50/30 p-4 my-2">
-      <div className="text-xs font-medium tracking-[0.2em] uppercase text-amber-800 mb-2">
+    <Card className="p-5 my-2">
+      <p className="text-[11px] font-medium tracking-[0.2em] uppercase text-amber-800 mb-2">
         Drill
-      </div>
-      <p className="text-stone-600 text-sm mb-3">{activity.prompt}</p>
-      <div className="rounded-md bg-white p-3 mb-3 border border-stone-200">
+      </p>
+      <p className="text-stone-600 text-sm mb-4 leading-relaxed">
+        {activity.prompt}
+      </p>
+      <div className="rounded-md bg-stone-50 p-3 mb-4 border border-stone-100">
         {renderDrill(activity, setProgress)}
       </div>
       <div className="flex flex-wrap gap-2 items-center justify-between">
         <div className="text-sm text-stone-600">
           {progress.attempts > 0 ? (
             <>
-              <span className="font-medium text-stone-800">
+              <span className="font-medium text-stone-900">
                 {progress.attempts}
               </span>{" "}
               questions ·{" "}
-              <span className="font-medium text-stone-800">
+              <span className="font-medium text-stone-900">
                 {progress.correct}
               </span>{" "}
               correct
             </>
           ) : (
-            <span className="text-stone-500">Run a few questions to enable Done</span>
+            <span className="text-stone-500">
+              Run a few questions to enable Done
+            </span>
           )}
         </div>
         {!done && (
           <Button
-            type="primary"
+            variant="primary"
             disabled={!ready}
             onClick={() =>
               onDone({
@@ -102,7 +104,6 @@ export const DrillCard = ({ activity, done, onDone }: Props) => {
                 correct: progress.correct,
               })
             }
-            size="middle"
           >
             Done →
           </Button>
@@ -113,6 +114,6 @@ export const DrillCard = ({ activity, done, onDone }: Props) => {
           </span>
         )}
       </div>
-    </div>
+    </Card>
   );
 };
