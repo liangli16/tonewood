@@ -29,7 +29,7 @@ export const BackingTrackCard = ({ activity, done, onDone }: Props) => {
 
   return (
     <div className="rounded-xl border border-amber-200 bg-amber-50/30 p-4 my-2">
-      <div className="text-xs font-medium tracking-[0.2em] uppercase text-amber-800 mb-2">
+      <div className="text-xs font-medium tracking-[0.2em] uppercase text-amber-900 mb-2">
         Backing track · key of {activity.key}
       </div>
       <div className="font-medium text-stone-700 text-sm mb-2">

@@ -30,7 +30,7 @@ npm run build    # runs type-check + ESLint; ALWAYS run before pushing
 
 ## File map
 
-- `pages/index.tsx` — landing page (hero, drill cards, fretboard preview). Hero primary CTA leads to `/coach` (the conversational coach preview); "Or browse drills" sends to `/practice`. Reuses `Fretboard` for the hero visual.
+- `pages/index.tsx` — landing page. Two-column hero: left side has the eyebrow + large `Tonewood` wordmark + a `Typewriter` tagline that cycles through three phrases + CTAs; right side has the `Fretboard` C-major preview. Below: drill cards, "how it's different" trio, footer (copyright + brand line). Primary CTA leads to `/coach`; "Or browse drills" sends to `/practice`.
 - `pages/coach/index.tsx` — conversational coach surface. Renders a message stream (coach bubbles + user bubbles), input affordances (button choices OR activity cards), and a "Reset session" / "Start new session" control. Reads from `useCoachMemory`; calls `nextStubTurn` after every user reply / activity completion to advance.
 - `pages/practice/index.tsx` — Tabs container, one tab per drill. Calls `preloadInstruments()` on mount so samples are warm by the time the user clicks Play.
 - `components/Practice/components.tsx` — `PracticeShell` + `usePracticeState`. Shared scaffold every drill plugs into. **Also exports the drill-embedding API**: `DrillEmbedProps<TConfig>` + `useDrillProgressReporter`. Every drill component accepts optional `lock` (locks its config + skips localStorage hydration; the embedder owns the config) and `onProgress` (fires `{attempts, correct}` on every answer). `PracticeShell` accepts `hideExtra` and `hideHeaderScore` so the embedder can suppress the per-drill config bar and inline running score. This is what `pages/coach/index.tsx` uses to embed a drill inside a coach session.
@@ -46,7 +46,8 @@ npm run build    # runs type-check + ESLint; ALWAYS run before pushing
 - `constants/progressions.ts` — roman-numeral definitions for the 4 progressions
 - `constants/modes.ts` — the 4 modes (Ionian / Dorian / Mixolydian / Aeolian) with tonal scale name, degrees formula, and tonic-triad quality for priming
 - `components/Fretboard/Fretboard.tsx` — vertical amber chord diagram (div-based, not SVG). Supports `startFret` (windowed view with `Nfr` label), `numFrets` (adaptive window size — defaults to 5; widen for spread voicings or scale charts), `mutes[]` (renders `×` above muted strings), and `compact` (smaller dimensions for laying out multiple diagrams in a row, e.g. progression chord-by-chord reveal).
-- `components/TopNav.tsx` — shared top bar (brand link + page-aware right action). Used by `/` and `/practice`.
+- `components/TopNav.tsx` — shared top bar (3-col grid: empty | centered brand wordmark + amber sliver | right-aligned `Coach` / `Practice` nav links). Used by `/`, `/coach`, `/practice`.
+- `components/Typewriter.tsx` — small custom component (no library). Cycles through a list of phrases, typing each character via `setTimeout`, holding, erasing, advancing. Caret is a 2px-wide `bg-current` block with `animate-blink` (keyframe defined in `tailwind.config.ts`). Used on the landing hero.
 - `utils/music.ts` — tonal wrappers (`buildChordNotes`, `buildChordsFromRomans`, `symbolsFromRomans`, `simplifyNote`, `simplifyChordSymbol`, scale/mode helpers, re-exports `Chord/Scale/Mode/Note/Progression`). `simplifyNote` rewrites tonal's enharmonics to sharp/natural form (`C##` → `D`, `E#` → `F`, `Db` → `C#`); `simplifyChordSymbol` does the same for chord symbols (`F##m` → `Gm`, `B#m` → `Cm`, `E#7` → `F7`). Always use these before showing a note or chord name to the user.
 - `utils/coachMemory.ts` — Valtio + localStorage backing for the conversational coach: `transcript` (current session messages), `profile` (free-form notes the coach has accumulated about the user — empty in stub mode), `sessions` (archived past sessions). Also the shared **type contract** for the coach: `Message`, `CoachTurn`, `Activity` (one of `drill` / `backing-track` / `reflection`), `ActivityResult`. The same contract the future LLM API route will satisfy.
 - `utils/coachStub.ts` — deterministic state machine. `nextStubTurn(transcript)` walks the transcript, finds the last coach `stubNode`, and emits the next `CoachTurn`. **Designed to be swapped wholesale** for `await fetch('/api/coach/turn', {...})` once the Anthropic API key is in place; the rest of the coach UI doesn't change.
@@ -100,6 +101,31 @@ Copy `ChordQuality.tsx`. Each drill is ~150 lines:
 - **smplr samples come from a GitHub Pages CDN (`smpldsnds`).** First load of an instrument fetches a few hundred KB. We mitigate with two layers: `preloadInstruments()` on `/practice` mount (warm by click time) and `CacheStorage` (instant on subsequent sessions). Cache API needs a secure context — works on `localhost` and HTTPS, but not over plain HTTP on a non-localhost host.
 - **AudioContext must be created on the client only.** `utils/audio.ts` lazy-creates it inside `getContext()`; never at module top level (would crash SSR).
 - **No yarn on this machine.** Use npm.
+
+## Palette / theming
+
+One unified warm accent across the whole site. **Don't reintroduce mixed shades.**
+
+| Role                       | Token / hex                                    |
+| -------------------------- | ---------------------------------------------- |
+| Canvas                     | `bg-stone-50` (`#FAFAF9`) — warm cream         |
+| Body text primary          | `text-stone-800` / `text-stone-900`            |
+| Body text secondary        | `text-stone-500` / `text-stone-600`            |
+| **Saturated accent**       | `amber-900` (`#78350F`) — eyebrows, brand sliver, active nav links, link hovers, headlines split-color, fretboard non-root dots + gutter labels, Coach user message bubble, drill / backing-track / "how it's different" eyebrows |
+| **Antd `colorPrimary`**    | `#78350f` in `pages/_app.tsx` — matches `amber-900` so every Antd Button (Talk to coach, Play, Next, Done) sits on the same accent |
+| Subtle warm washes         | `amber-50` / `amber-100` / `amber-200` / `amber-300` (used as low-opacity backgrounds, borders, and decorative frets — these are the quiet backdrop, not competing accents) |
+| Fretboard root highlight   | `rose-600` — the **only** intentional second color, scoped to the fretboard for root-note dots |
+
+When adding a new component: any saturated accent goes through `amber-900`. If you need a deeper / lighter shade, prefer opacity (`amber-900/80`) over shifting to a different amber step.
+
+## Doc-update rule
+
+Before every commit, update `CLAUDE.md` and `README.md` (and any other affected `docs/*`) so they reflect the new state of the code. Architecture changes, new components, palette tweaks, route shifts, env-var changes, and build/deploy changes all warrant a doc touch in the same commit (or as a preceding commit in the same push). Bug-fix-only commits can skip the doc churn.
+
+## Deploying to Vercel
+
+- Auto-deploys on push to `main`. Preview deploys on every PR.
+- **Env vars: set `ANTHROPIC_API_KEY` in the Vercel dashboard** under Project Settings → Environment Variables (scope to Production + Preview). It is server-side only (read in `pages/api/coach/turn.ts`), never exposed to the browser. The local `.env.local` is git-ignored and only used by `npm run dev`.
 
 ## Conventions
 

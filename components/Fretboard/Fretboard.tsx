@@ -62,7 +62,7 @@ export const Fretboard = ({
         {/* Fret number gutter */}
         <div
           className={classNames(
-            "flex flex-col items-center pr-2 text-amber-800 font-medium",
+            "flex flex-col items-center pr-2 text-amber-900 font-medium",
             s.fretGutterClass
           )}
           style={{ width: s.gutterW }}
@@ -164,7 +164,7 @@ export const Fretboard = ({
                             "z-20 rounded-full flex items-center justify-center text-white font-bold shadow-sm",
                             s.dotClass,
                             s.dotTextClass,
-                            isRoot ? "bg-rose-600" : "bg-amber-700"
+                            isRoot ? "bg-rose-600" : "bg-amber-900"
                           )}
                         >
                           {p.pitchClass}
@@ -204,7 +204,7 @@ export const Fretboard = ({
                             "z-20 rounded-full flex items-center justify-center text-white font-bold shadow-sm",
                             s.dotClass,
                             s.dotTextClass,
-                            isRoot ? "bg-rose-600" : "bg-amber-700"
+                            isRoot ? "bg-rose-600" : "bg-amber-900"
                           )}
                         >
                           {p.pitchClass}

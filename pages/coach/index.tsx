@@ -213,7 +213,7 @@ const CoachPage = () => {
         <div className="px-4 md:px-12 max-w-3xl mx-auto pb-32">
           <div className="pt-2 pb-4 flex items-baseline justify-between gap-4">
             <div>
-              <p className="text-xs font-medium tracking-[0.2em] uppercase text-amber-800">
+              <p className="text-xs font-medium tracking-[0.2em] uppercase text-amber-900">
                 Coach
               </p>
               <h1 className="text-2xl md:text-3xl font-semibold tracking-tight mt-1">
@@ -223,7 +223,7 @@ const CoachPage = () => {
             <button
               onClick={onResetSession}
               disabled={thinking}
-              className="text-xs text-stone-500 hover:text-amber-800 transition-colors disabled:opacity-40"
+              className="text-xs text-stone-500 hover:text-amber-900 transition-colors disabled:opacity-40"
             >
               Reset session
             </button>

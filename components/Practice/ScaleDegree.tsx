@@ -135,7 +135,7 @@ export const ScaleDegree = ({
                 — {noteOnly} in the key of {current.key} major
               </span>
             </div>
-            <div className="text-amber-800 font-medium text-sm">
+            <div className="text-amber-900 font-medium text-sm">
               Cadence: I – IV – V – I
             </div>
           </div>

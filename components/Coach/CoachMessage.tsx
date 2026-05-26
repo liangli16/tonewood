@@ -36,7 +36,7 @@ export const CoachMessage = ({ message }: Props) => {
           "max-w-[80%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed",
           isCoach
             ? "bg-white border border-stone-200 text-stone-800"
-            : "bg-amber-700 text-white"
+            : "bg-amber-900 text-white"
         )}
       >
         {renderText(message.text)}

@@ -3,6 +3,7 @@ import Head from "next/head";
 import { Button } from "antd";
 import { Fretboard } from "@/components/Fretboard/Fretboard";
 import { TopNav } from "@/components/TopNav";
+import { Typewriter } from "@/components/Typewriter";
 import { getChordPositions } from "@/utils/fretboard";
 import { buildChordNotes } from "@/utils/music";
 
@@ -47,6 +48,12 @@ const DRILLS: Drill[] = [
   },
 ];
 
+const TAGLINES = [
+  "Stop guessing chords.",
+  "Start hearing them in context.",
+  "Train your ear on real music.",
+];
+
 export default function Home() {
   const cMajorPositions = getChordPositions(buildChordNotes("C", "M", 4, 0));
 
@@ -64,24 +71,30 @@ export default function Home() {
         <TopNav />
 
         <main className="px-6 md:px-12 max-w-6xl mx-auto">
-          {/* Hero */}
-          <section className="grid md:grid-cols-2 gap-10 md:gap-16 items-center pt-10 pb-20 md:pt-16 md:pb-28">
-            <div className="space-y-6">
-              <p className="text-xs font-medium tracking-[0.2em] uppercase text-amber-800">
+          {/* Hero — two columns: brand + tagline on left, fretboard on right */}
+          <section className="grid md:grid-cols-2 gap-10 md:gap-16 items-center pt-12 pb-20 md:pt-20 md:pb-28">
+            <div>
+              <p className="text-[11px] font-medium tracking-[0.25em] uppercase text-amber-900/80 mb-5">
                 Ear training · for guitarists
               </p>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold leading-[1.05] tracking-tight">
-                Stop guessing chords.{" "}
-                <span className="text-amber-800">
-                  Start hearing them in context.
-                </span>
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-stone-900 leading-[1.02]">
+                Tonewood
               </h1>
-              <p className="text-stone-600 text-base md:text-lg leading-relaxed max-w-md">
+              <div className="mt-6 md:mt-7 min-h-[2.5rem] md:min-h-[3rem] text-lg md:text-xl text-stone-700 font-medium">
+                <Typewriter
+                  phrases={TAGLINES}
+                  typeSpeed={55}
+                  eraseSpeed={25}
+                  holdMs={1800}
+                  caretClassName="text-amber-900"
+                />
+              </div>
+              <p className="mt-5 max-w-md text-stone-500 text-sm md:text-base leading-relaxed">
                 In-context ear training for hobbyists. Cadence-primed keys,
                 fretboard reveals, real-music progressions — not decontextualized
                 quizzes.
               </p>
-              <div className="flex flex-wrap items-center gap-4 pt-2">
+              <div className="mt-7 flex flex-wrap items-center gap-4">
                 <Link href="/coach">
                   <Button type="primary" size="large">
                     Talk to the coach
@@ -89,29 +102,26 @@ export default function Home() {
                 </Link>
                 <Link
                   href="/practice"
-                  className="text-sm text-stone-600 hover:text-amber-800 transition-colors"
+                  className="text-sm text-stone-600 hover:text-amber-900 transition-colors"
                 >
                   Or browse drills →
                 </Link>
               </div>
-              <p className="text-xs text-stone-500 max-w-md">
-                <span className="font-medium text-stone-600">New:</span> a
-                preview of the AI coach that&apos;ll guide your practice. Real AI
-                lands next; for now the flow is scripted.
+              <p className="mt-5 text-xs text-stone-400 max-w-md">
+                <span className="font-medium text-stone-500">New:</span> a
+                preview of the AI coach that&apos;ll guide your practice.
               </p>
             </div>
 
             <div className="flex justify-center md:justify-end">
               <div className="relative">
-                <div className="absolute -inset-6 bg-amber-100/40 rounded-2xl -z-10" />
-                <div className="bg-white/60 backdrop-blur-sm rounded-xl p-5 shadow-sm border border-stone-200/70">
+                <div className="absolute -inset-6 bg-amber-100/30 rounded-2xl -z-10" />
+                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-5 shadow-sm border border-stone-200/70">
                   <div className="flex items-baseline justify-between mb-3 px-1">
                     <span className="text-sm font-semibold text-stone-700">
                       C major
                     </span>
-                    <span className="text-xs text-stone-500">
-                      Rose = root
-                    </span>
+                    <span className="text-xs text-stone-500">Rose = root</span>
                   </div>
                   <Fretboard positions={cMajorPositions} highlightRoot="C" />
                 </div>
@@ -122,7 +132,7 @@ export default function Home() {
           {/* Drills */}
           <section id="drills" className="py-12 border-t border-stone-200">
             <div className="flex items-baseline justify-between mb-8">
-              <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
+              <h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-stone-900">
                 What you&apos;ll train
               </h2>
               <span className="text-sm text-stone-500 hidden sm:inline">
@@ -146,13 +156,13 @@ export default function Home() {
                       <span
                         className={
                           "text-xs font-medium tracking-wide uppercase " +
-                          (isReady ? "text-amber-800" : "text-stone-400")
+                          (isReady ? "text-amber-900" : "text-stone-400")
                         }
                       >
                         {isReady ? "Ready" : "Coming soon"}
                       </span>
                       {isReady && (
-                        <span className="text-amber-800 text-sm">→</span>
+                        <span className="text-amber-900 text-sm">→</span>
                       )}
                     </div>
                     <h3
@@ -189,30 +199,30 @@ export default function Home() {
           <section className="py-16 border-t border-stone-200">
             <div className="grid md:grid-cols-3 gap-8 md:gap-12">
               <div>
-                <div className="w-8 h-8 rounded-md bg-amber-100 text-amber-800 flex items-center justify-center font-semibold mb-3">
+                <div className="w-8 h-8 rounded-md bg-amber-100 text-amber-900 flex items-center justify-center font-semibold mb-3">
                   1
                 </div>
-                <h3 className="font-semibold mb-2">Ears, then eyes</h3>
+                <h3 className="font-semibold mb-2 text-stone-900">Ears, then eyes</h3>
                 <p className="text-sm text-stone-600 leading-relaxed">
                   Hear the chord first. Answer. Then see every position on the
                   fretboard so the sound and shape lock together.
                 </p>
               </div>
               <div>
-                <div className="w-8 h-8 rounded-md bg-amber-100 text-amber-800 flex items-center justify-center font-semibold mb-3">
+                <div className="w-8 h-8 rounded-md bg-amber-100 text-amber-900 flex items-center justify-center font-semibold mb-3">
                   2
                 </div>
-                <h3 className="font-semibold mb-2">In-context, not abstract</h3>
+                <h3 className="font-semibold mb-2 text-stone-900">In-context, not abstract</h3>
                 <p className="text-sm text-stone-600 leading-relaxed">
                   Cadence-primed keys and real progressions. Train how chords
                   actually sound in songs, not as isolated puzzles.
                 </p>
               </div>
               <div>
-                <div className="w-8 h-8 rounded-md bg-amber-100 text-amber-800 flex items-center justify-center font-semibold mb-3">
+                <div className="w-8 h-8 rounded-md bg-amber-100 text-amber-900 flex items-center justify-center font-semibold mb-3">
                   3
                 </div>
-                <h3 className="font-semibold mb-2">Tuned for hobbyists</h3>
+                <h3 className="font-semibold mb-2 text-stone-900">Tuned for hobbyists</h3>
                 <p className="text-sm text-stone-600 leading-relaxed">
                   Built for guitarists learning theory from books and videos who
                   need a practice tool that actually fits.
@@ -225,7 +235,7 @@ export default function Home() {
         <footer className="border-t border-stone-200 mt-8">
           <div className="max-w-6xl mx-auto px-6 md:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-stone-500">
             <span>Tonewood — built for guitarist hobbyists.</span>
-            <span>Made with smplr + tonal.</span>
+            <span>© {new Date().getFullYear()} Tonewood. All rights reserved.</span>
           </div>
         </footer>
       </div>

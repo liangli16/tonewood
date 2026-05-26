@@ -73,7 +73,7 @@ export const DrillCard = ({ activity, done, onDone }: Props) => {
 
   return (
     <div className="rounded-xl border border-amber-200 bg-amber-50/30 p-4 my-2">
-      <div className="text-xs font-medium tracking-[0.2em] uppercase text-amber-800 mb-2">
+      <div className="text-xs font-medium tracking-[0.2em] uppercase text-amber-900 mb-2">
         Drill
       </div>
       <p className="text-stone-600 text-sm mb-3">{activity.prompt}</p>

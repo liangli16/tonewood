@@ -8,7 +8,7 @@ export default function App({ Component, pageProps }: AppProps) {
       theme={{
         algorithm: theme.defaultAlgorithm,
         token: {
-          colorPrimary: "#7c5e3c",
+          colorPrimary: "#78350f",
           borderRadius: 6,
         },
       }}

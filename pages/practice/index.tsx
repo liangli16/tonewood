@@ -31,7 +31,7 @@ const Practice = () => {
         <TopNav />
         <div className="px-4 md:px-12 max-w-5xl mx-auto pb-12">
           <div className="pt-2 pb-6">
-            <p className="text-xs font-medium tracking-[0.2em] uppercase text-amber-800">
+            <p className="text-xs font-medium tracking-[0.2em] uppercase text-amber-900">
               Practice
             </p>
             <h1 className="text-2xl md:text-3xl font-semibold tracking-tight mt-1">

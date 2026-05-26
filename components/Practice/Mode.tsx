@@ -154,7 +154,7 @@ export const Mode = ({
                   {displayed.join(" – ")}
                 </div>
               )}
-              <div className="text-amber-800 font-medium text-sm">
+              <div className="text-amber-900 font-medium text-sm">
                 {def.degrees}
               </div>
             </div>

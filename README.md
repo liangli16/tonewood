@@ -29,6 +29,20 @@ npm run dev       # http://localhost:3000
 npm run build     # type-check + ESLint; run before pushing
 ```
 
+The conversational coach (`/coach`) calls the Anthropic API server-side. For local dev, drop your key in `.env.local`:
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+`.env.local` is git-ignored. Without a key, the coach page will surface an error from the API route on first call.
+
+## Deploy
+
+Auto-deploys to Vercel on push to `main`. Preview deploys on every PR.
+
+Set `ANTHROPIC_API_KEY` in the Vercel dashboard under **Project Settings → Environment Variables** (scope to Production + Preview). The key is read only server-side in `pages/api/coach/turn.ts`; it is never sent to the browser.
+
 ## Project layout
 
-See `CLAUDE.md` for the operational guide — file map, gotchas, conventions, and how to add a new drill.
+See `CLAUDE.md` for the operational guide — file map, palette, gotchas, conventions, and how to add a new drill.
