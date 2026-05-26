@@ -89,14 +89,29 @@ export type SessionSummary = {
   summary: string;
 };
 
+export type TokenUsage = {
+  date: string; // YYYY-MM-DD (local)
+  tokensUsed: number;
+};
+
 export type CoachMemory = {
   transcript: Message[];
   profile: string;
   sessions: SessionSummary[];
+  tokenUsage?: TokenUsage;
 };
 
 const STORAGE_KEY = "TONEWOOD_COACH_MEMORY_V1";
-const empty = (): CoachMemory => ({ transcript: [], profile: "", sessions: [] });
+const empty = (): CoachMemory => ({
+  transcript: [],
+  profile: "",
+  sessions: [],
+});
+
+// Daily LLM-token cap per browser. Soft (trivially bypassable by clearing
+// localStorage) — the point is keeping honest users from running away with
+// API spend, not security.
+export const DAILY_TOKEN_CAP = 100_000;
 
 export const coachMemory = proxy<CoachMemory>(empty());
 let hydrated = false;
@@ -188,4 +203,27 @@ export const resetCoachMemory = () => {
   coachMemory.transcript = [];
   coachMemory.profile = "";
   coachMemory.sessions = [];
+};
+
+// ---------- Token cap ----------
+
+const today = (): string => new Date().toISOString().slice(0, 10);
+
+export const getTokensUsedToday = (): number => {
+  hydrate();
+  if (!coachMemory.tokenUsage || coachMemory.tokenUsage.date !== today())
+    return 0;
+  return coachMemory.tokenUsage.tokensUsed;
+};
+
+export const isOverDailyCap = (): boolean =>
+  getTokensUsedToday() >= DAILY_TOKEN_CAP;
+
+export const recordTokens = (input: number, output: number) => {
+  hydrate();
+  const d = today();
+  if (!coachMemory.tokenUsage || coachMemory.tokenUsage.date !== d) {
+    coachMemory.tokenUsage = { date: d, tokensUsed: 0 };
+  }
+  coachMemory.tokenUsage.tokensUsed += input + output;
 };

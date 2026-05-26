@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { Button } from "antd";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { TopNav } from "@/components/TopNav";
 import { CoachMessage } from "@/components/Coach/CoachMessage";
 import { BackingTrackCard } from "@/components/Coach/BackingTrackCard";
@@ -13,19 +13,19 @@ import {
   appendActivityResult,
   endSession,
   resetCoachMemory,
+  recordTokens,
+  isOverDailyCap,
   type Message,
   type ActivityResult,
   type Activity,
+  type CoachTurn,
 } from "@/utils/coachMemory";
-import { nextStubTurn } from "@/utils/coachStub";
 import { preloadInstruments } from "@/utils/audio";
 
 const activityWasCompleted = (
   transcript: Message[],
   activityMessageId: string
 ): boolean => {
-  // Find the message that proposed the activity, then check if any later user
-  // message carries an `activityResult` referencing the same kind.
   const idx = transcript.findIndex((m) => m.id === activityMessageId);
   if (idx === -1) return false;
   const activity = transcript[idx].activity;
@@ -34,8 +34,7 @@ const activityWasCompleted = (
     .slice(idx + 1)
     .some(
       (m) =>
-        m.role === "user" &&
-        m.activityResult?.kind === activity.kind
+        m.role === "user" && m.activityResult?.kind === activity.kind
     );
 };
 
@@ -46,7 +45,9 @@ const renderActivityCard = (
 ) => {
   switch (activity.kind) {
     case "backing-track":
-      return <BackingTrackCard activity={activity} done={done} onDone={onDone} />;
+      return (
+        <BackingTrackCard activity={activity} done={done} onDone={onDone} />
+      );
     case "drill":
       return <DrillCard activity={activity} done={done} onDone={onDone} />;
     case "reflection":
@@ -69,11 +70,61 @@ const summarizeResult = (result: ActivityResult): string => {
   }
 };
 
+// Call the LLM-backed coach API, append the resulting turn to the transcript,
+// record token usage. Returns true on success, false on failure (cap or API).
+const requestCoachTurn = async (
+  transcript: Message[]
+): Promise<{ ok: true } | { ok: false; error: string }> => {
+  if (isOverDailyCap()) {
+    return {
+      ok: false,
+      error:
+        "You've used today's coach turns on this browser. The cap resets at midnight UTC.",
+    };
+  }
+  try {
+    const res = await fetch("/api/coach/turn", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transcript }),
+    });
+    const data = (await res.json()) as
+      | {
+          turn: CoachTurn;
+          usage: { input_tokens: number; output_tokens: number };
+        }
+      | { error: string };
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: "error" in data ? data.error : `Coach API ${res.status}`,
+      };
+    }
+    if (!("turn" in data)) {
+      return { ok: false, error: "Coach API returned no turn" };
+    }
+    appendCoachMessage(data.turn);
+    recordTokens(data.usage.input_tokens, data.usage.output_tokens);
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error:
+        err instanceof Error
+          ? err.message
+          : "Couldn't reach the coach. Try again?",
+    };
+  }
+};
+
 const CoachPage = () => {
   const { snap, state } = useCoachMemory();
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const [thinking, setThinking] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+  // Prevent the mount-effect from firing twice in React strict mode.
+  const mountFiredRef = useRef(false);
 
-  // Latest coach turn drives the input affordances (choices vs activity).
   const latestCoachMessage = useMemo(() => {
     for (let i = snap.transcript.length - 1; i >= 0; i--) {
       if (snap.transcript[i].role === "coach") return snap.transcript[i];
@@ -81,17 +132,25 @@ const CoachPage = () => {
     return null;
   }, [snap.transcript]);
 
-  // Whether the latest coach message comes AFTER any subsequent user reply.
-  // (i.e. it's the coach's "live" turn waiting for the user.)
   const lastMessage = snap.transcript[snap.transcript.length - 1];
   const coachIsLive = lastMessage?.role === "coach";
   const sessionEnded = coachIsLive && lastMessage?.end === true;
 
-  // Start the conversation on mount if empty.
+  const askCoach = async () => {
+    setThinking(true);
+    setApiError(null);
+    const result = await requestCoachTurn(state.transcript);
+    if (!result.ok) setApiError(result.error);
+    setThinking(false);
+  };
+
+  // Auto-greet on mount when the transcript is empty.
   useEffect(() => {
     preloadInstruments();
+    if (mountFiredRef.current) return;
+    mountFiredRef.current = true;
     if (state.transcript.length === 0) {
-      appendCoachMessage(nextStubTurn(state.transcript));
+      void askCoach();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -101,45 +160,42 @@ const CoachPage = () => {
     if (scrollerRef.current) {
       scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
     }
-  }, [snap.transcript.length]);
+  }, [snap.transcript.length, thinking]);
 
   const onChoice = (choice: string) => {
+    if (thinking) return;
     appendUserMessage(choice);
-    setTimeout(() => {
-      const next = nextStubTurn(state.transcript);
-      appendCoachMessage(next);
-    }, 350);
-  };
-
-  const onStartNewSession = () => {
-    endSession("Coach session");
-    setTimeout(() => {
-      appendCoachMessage(nextStubTurn(state.transcript));
-    }, 100);
+    void askCoach();
   };
 
   const onActivityDone = (result: ActivityResult) => {
+    if (thinking) return;
     appendActivityResult(summarizeResult(result), result);
-    setTimeout(() => {
-      const next = nextStubTurn(state.transcript);
-      appendCoachMessage(next);
-    }, 350);
+    void askCoach();
+  };
+
+  const onStartNewSession = () => {
+    if (thinking) return;
+    endSession("Coach session");
+    void askCoach();
   };
 
   const onResetSession = () => {
+    if (thinking) return;
     resetCoachMemory();
-    setTimeout(() => {
-      appendCoachMessage(nextStubTurn(state.transcript));
-    }, 100);
+    void askCoach();
   };
 
-  // Determine what input to show.
+  const onRetry = () => {
+    if (thinking) return;
+    void askCoach();
+  };
+
   const activeActivity = latestCoachMessage?.activity;
   const activeChoices =
     latestCoachMessage && !activeActivity
       ? latestCoachMessage.choices
       : undefined;
-
   const activeActivityDone = latestCoachMessage
     ? activityWasCompleted(
         snap.transcript as unknown as Message[],
@@ -166,28 +222,22 @@ const CoachPage = () => {
             </div>
             <button
               onClick={onResetSession}
-              className="text-xs text-stone-500 hover:text-amber-800 transition-colors"
+              disabled={thinking}
+              className="text-xs text-stone-500 hover:text-amber-800 transition-colors disabled:opacity-40"
             >
               Reset session
             </button>
           </div>
 
-          <p className="text-xs text-stone-500 mb-6 italic max-w-prose">
-            Heads-up: this is a preview. The coach's responses are scripted for
-            now — when the real AI is plugged in, it'll adapt to you specifically.
-          </p>
-
-          <div
-            ref={scrollerRef}
-            className="space-y-3"
-          >
+          <div ref={scrollerRef} className="space-y-3">
             {snap.transcript.map((m) => {
               const isCoachWithActivity =
                 m.role === "coach" && !!m.activity;
               return (
                 <div key={m.id} className="space-y-2">
                   <CoachMessage message={m as Message} />
-                  {isCoachWithActivity && m.activity &&
+                  {isCoachWithActivity &&
+                    m.activity &&
                     renderActivityCard(
                       m.activity as Activity,
                       activityWasCompleted(
@@ -199,10 +249,31 @@ const CoachPage = () => {
                 </div>
               );
             })}
+
+            {thinking && (
+              <div className="flex justify-start">
+                <div className="rounded-2xl bg-white border border-stone-200 px-4 py-3 text-stone-500 text-sm italic">
+                  Coach is thinking…
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Choices area */}
-          {coachIsLive &&
+          {apiError && (
+            <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50/60 p-4">
+              <div className="text-xs font-medium tracking-[0.2em] uppercase text-rose-700 mb-1">
+                Hiccup
+              </div>
+              <p className="text-sm text-stone-700 mb-3">{apiError}</p>
+              <Button onClick={onRetry} size="middle" disabled={thinking}>
+                Try again
+              </Button>
+            </div>
+          )}
+
+          {!thinking &&
+            !apiError &&
+            coachIsLive &&
             !sessionEnded &&
             activeChoices &&
             activeChoices.length > 0 && (
@@ -220,13 +291,18 @@ const CoachPage = () => {
               </div>
             )}
 
-          {coachIsLive && !sessionEnded && activeActivity && !activeActivityDone && (
-            <p className="mt-6 text-xs text-stone-500 italic">
-              Complete the activity above to continue.
-            </p>
-          )}
+          {!thinking &&
+            !apiError &&
+            coachIsLive &&
+            !sessionEnded &&
+            activeActivity &&
+            !activeActivityDone && (
+              <p className="mt-6 text-xs text-stone-500 italic">
+                Complete the activity above to continue.
+              </p>
+            )}
 
-          {sessionEnded && (
+          {!thinking && sessionEnded && (
             <div className="mt-6">
               <Button type="primary" size="middle" onClick={onStartNewSession}>
                 Start a new session →

@@ -19,14 +19,15 @@ const DRILLS: Drill[] = [
     key: "chord-quality",
     title: "Chords",
     blurb:
-      "Hear a chord, name it. Major, minor, dominant 7, maj7, m7 — in any inversion.",
+      "Hear a chord, name it. maj, m, 7, maj7, m7 — in any inversion.",
     status: "ready",
     href: "/practice#chord-quality",
   },
   {
     key: "progressions",
     title: "Common Progressions",
-    blurb: "I–V–vi–IV vs ii–V–I vs I–vi–IV–V vs 12-bar blues.",
+    blurb:
+      "Four 4-chord families: Pop (I–V–vi–IV), Doo-wop (I–vi–IV–V), Jazz turnaround (ii7–V7–Imaj7–vi7), Blues (I7–IV7–V7–I7).",
     status: "ready",
     href: "/practice#progression",
   },

@@ -64,15 +64,19 @@ npm run build    # runs type-check + ESLint; ALWAYS run before pushing
 
 ## v2 in progress — Conversational Coach (feature branch)
 
-Branch `feat/coach-conversational` adds an AI-coach surface on top of v1's drills. The MVP **runs without any API key** — `utils/coachStub.ts` is a deterministic state machine standing in for the LLM. Same `CoachTurn` shape the real LLM will return; swap-only-the-engine when an Anthropic key is added.
+Branch `feat/coach-conversational` adds an AI-coach surface on top of v1's drills.
 
-Loop: coach greets → asks open question → user picks a choice → coach proposes an activity (drill / backing-track + prompt / reflection) → user does it → coach reads the result and proposes the next step → eventually wraps up + archives the session.
+**Phase 1 (current state on this branch):** the coach is LLM-driven. `pages/api/coach/turn.ts` calls Anthropic (Claude Sonnet 4.6) server-side, with the system prompt + structured-output tool schema in `utils/anthropicPrompts.ts`. The model emits a `CoachTurn` via mandatory tool-use; the API route validates / normalizes and returns it. `pages/coach/index.tsx` POSTs the current transcript and renders whatever comes back.
 
-Opening focus: improvisation guidance, anchored on "I feel lost on the fretboard." The stub script runs ~12 nodes covering diagnose → target chord-tone-targeting → backing-track exercise → reflect → branch to either harder backing track or a Scale-Degree drill → wrap up.
+To run: set `ANTHROPIC_API_KEY` in `.env.local`. The key is read only on the server side; never exposed to the browser. Cost guard: per-browser daily token cap (~100k tokens) in localStorage; hitting it blocks further calls with a friendly message.
 
-When the API key lands: add `pages/api/coach/turn.ts` that calls Anthropic; have `pages/coach/index.tsx` fetch from there instead of calling `nextStubTurn` synchronously. Same I/O contract; no other code changes.
+**The system prompt is the load-bearing piece.** Tune coach behavior there. Tool schema in the same file constrains the response shape so the UI can render it without parsing fragility.
 
-A prior curriculum-shaped coach was attempted on `feat/coach-mvp` and abandoned as too textbook-y; that branch is kept as reference but should not be merged.
+`utils/coachStub.ts` is **kept in the repo as an offline-dev fallback** — useful for UI iteration without burning tokens. To use it instead of the LLM, swap the `askCoach` body in `pages/coach/index.tsx` to call `nextStubTurn(state.transcript)` synchronously. Not auto-fallback: API failures show an error + retry button, so prompt/model issues surface.
+
+**Phases ahead:** Phase 2 adds Supabase auth + DB so signed-in users get durable cross-device memory; Phase 3 adds an LLM-generated `profile_md` per user so the coach actually *knows* you across sessions; Phase 4 is launch polish.
+
+A prior curriculum-shaped coach experiment lives on `feat/coach-mvp` (kept as reference; should not be merged).
 
 ## Adding a new drill
 
