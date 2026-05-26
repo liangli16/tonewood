@@ -1,9 +1,8 @@
+import { Card, Button, Radio, Space } from "antd";
 import { useEffect, useRef, useState, ReactNode } from "react";
 import { proxy, subscribe, useSnapshot } from "valtio";
 import _ from "lodash";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { ButtonRow, type ButtonRowItem } from "@/components/ui/ButtonRow";
+import classNames from "classnames";
 
 type PracticeStateBase = {
   pass: number;
@@ -38,7 +37,8 @@ export const usePracticeState = <T extends PracticeStateBase>(
   persistKeys: (keyof T)[],
   // When `override` is provided (coach module mode), the values in it are
   // applied on top of `defaultConfig()` and localStorage hydration/persistence
-  // is skipped entirely.
+  // is skipped entirely. The drill behaves as a one-off, the module owns the
+  // config, and the user's free-practice settings are not touched.
   override?: Partial<T>
 ) => {
   const [state] = useState(() =>
@@ -47,7 +47,7 @@ export const usePracticeState = <T extends PracticeStateBase>(
   const synthRef = useRef<unknown>(null);
 
   useEffect(() => {
-    if (override) return;
+    if (override) return; // module mode — no persistence
     try {
       const saved = JSON.parse(localStorage.getItem(localStorageKey) || "{}");
       Object.assign(state, saved);
@@ -73,28 +73,30 @@ export const usePracticeState = <T extends PracticeStateBase>(
   return { state, synthRef, resetStats };
 };
 
-type ShellProps<T extends string | number> = {
+type ShellProps = {
   title: string;
   state: any;
   prompt?: ReactNode;
   onPlay: () => void | Promise<void>;
   onNewQuestion: () => void;
-  // Called on a button click after the user has answered (A/B compare).
-  onOptionPlay?: (value: T) => void | Promise<void>;
-  getCorrectAnswer: () => T;
-  getCurrentAnswer: () => T | "" | 0 | undefined;
-  onAnswerChange: (value: T) => void;
-  // The answer options the user chooses from. Items-based — each drill
-  // returns plain data; PracticeShell does the rendering via ButtonRow.
-  answers: ButtonRowItem<T>[];
+  onOptionPlay?: (value: any) => void | Promise<void>;
+  getCorrectAnswer: () => any;
+  getCurrentAnswer: () => any;
+  onAnswerChange: (value: any) => void;
+  renderOptions: (
+    hasAnswered: boolean,
+    onOptionPlay?: (value: any) => void | Promise<void>
+  ) => ReactNode;
   renderExtra?: () => ReactNode;
-  renderReveal?: (correctAnswer: T) => ReactNode;
-  // Coach module mode: hide config row + header score.
+  renderReveal?: (correctAnswer: any) => ReactNode;
+  // Coach module mode: the drill's config UI is hidden (the module owns it),
+  // and the title bar's running score is suppressed (the module page shows
+  // its own progress UI).
   hideExtra?: boolean;
   hideHeaderScore?: boolean;
 };
 
-export const PracticeShell = <T extends string | number>({
+export const PracticeShell = ({
   title,
   state,
   prompt,
@@ -104,12 +106,12 @@ export const PracticeShell = <T extends string | number>({
   getCorrectAnswer,
   getCurrentAnswer,
   onAnswerChange,
-  answers,
+  renderOptions,
   renderExtra,
   renderReveal,
   hideExtra,
   hideHeaderScore,
-}: ShellProps<T>) => {
+}: ShellProps) => {
   const { all, pass, current } = useSnapshot(state);
   const correctAnswer = getCorrectAnswer();
   const currentAnswer = getCurrentAnswer();
@@ -121,80 +123,55 @@ export const PracticeShell = <T extends string | number>({
     currentAnswer !== 0;
   const percentage = (pass / (all || 1)) * 100;
 
-  const onClick = (v: T) => {
-    if (!hasAnswered) {
-      onAnswerChange(v);
-      if (v === correctAnswer) {
-        state.pass += 1;
-      }
-    } else if (onOptionPlay) {
-      void onOptionPlay(v);
-    }
-  };
-
   return (
-    <Card className="p-6 md:p-8">
-      <div className="flex items-baseline justify-between mb-6">
-        <h3 className="text-lg font-semibold text-stone-900">{title}</h3>
-        {!hideHeaderScore && (
-          <span className="text-sm text-stone-500">
-            <span className="font-medium text-stone-700">{pass}</span> /{" "}
-            {all}
-            <span className="text-stone-400 ml-1">
-              ({percentage.toFixed(0)}%)
+    <Card
+      className="border-none"
+      title={
+        <span>
+          <span className="mr-2">{title}</span>
+          {!hideHeaderScore && (
+            <span className="text-sm font-thin text-gray-500">
+              {pass} / {all} ({percentage.toFixed(0)}%)
             </span>
-          </span>
-        )}
-      </div>
-
-      {!hideExtra && renderExtra && (
-        <div className="pb-6 mb-6 border-b border-stone-100">
-          {renderExtra()}
-        </div>
-      )}
-
+          )}
+        </span>
+      }
+    >
       {current ? (
-        <div className="flex flex-col items-center gap-6">
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={onPlay}
-            className="w-48"
-          >
+        <>
+          {!hideExtra && renderExtra && (
+            <div className="pb-3 mb-6 border-b border-gray-100">
+              {renderExtra()}
+            </div>
+          )}
+          <Space direction="vertical" className="w-full items-center" size="large">
+          <Button type="primary" size="large" onClick={onPlay} className="w-48">
             Play
           </Button>
-
-          {prompt && (
-            <h3 className="text-base text-stone-700 text-center">{prompt}</h3>
-          )}
-
-          <ButtonRow<T>
-            items={answers}
-            value={hasAnswered ? (currentAnswer as T) : undefined}
-            onItemClick={onClick}
-            highlight={
-              hasAnswered
-                ? { [String(correctAnswer)]: "correct" }
-                : undefined
-            }
-          />
-
+          {prompt && <h3 className="text-base">{prompt}</h3>}
+          <Radio.Group
+            value={currentAnswer || undefined}
+            onChange={(e) => {
+              if (hasAnswered) return;
+              onAnswerChange(e.target.value);
+              if (e.target.value === correctAnswer) {
+                state.pass += 1;
+              }
+            }}
+            className={classNames("inline-block", {
+              "ring-2 ring-green-500 rounded": hasAnswered && isCorrect,
+              "ring-2 ring-red-400 rounded": hasAnswered && !isCorrect,
+            })}
+          >
+            {renderOptions(hasAnswered, onOptionPlay)}
+          </Radio.Group>
           {hasAnswered && (
-            <div className="text-center space-y-4 w-full">
-              <div
-                className={
-                  isCorrect
-                    ? "text-green-700 text-sm font-medium"
-                    : "text-rose-600 text-sm font-medium"
-                }
-              >
-                {isCorrect
-                  ? "Correct"
-                  : "Not quite — answer revealed below"}
+            <div className="text-center space-y-3">
+              <div className={isCorrect ? "text-green-600" : "text-red-500"}>
+                {isCorrect ? "Correct" : "Not quite — answer revealed below"}
               </div>
               {renderReveal && renderReveal(correctAnswer)}
               <Button
-                variant="secondary"
                 onClick={() => {
                   onNewQuestion();
                   onPlay();
@@ -205,7 +182,8 @@ export const PracticeShell = <T extends string | number>({
               </Button>
             </div>
           )}
-        </div>
+          </Space>
+        </>
       ) : null}
     </Card>
   );

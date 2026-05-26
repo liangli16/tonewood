@@ -1,3 +1,4 @@
+import { Radio, Space } from "antd";
 import { useEffect } from "react";
 import { useSnapshot } from "valtio";
 import { sample } from "lodash";
@@ -9,7 +10,6 @@ import {
 } from "./components";
 import { FormField } from "./FormField";
 import { MultiSelect } from "./MultiSelect";
-import { ButtonRow } from "@/components/ui/ButtonRow";
 import {
   NOTE_NAMES,
   buildChordsFromRomans,
@@ -78,6 +78,7 @@ export const ScaleDegree = ({
     if (!scale.length) return Promise.resolve();
     const testNote = simplifyNote(scale[degree - 1]);
 
+    // 4 cadence chords, then a rest beat, then the test note
     const sequence: string[][] = [...cadence, [], [testNote]];
 
     return playProgression(sequence, {
@@ -92,10 +93,8 @@ export const ScaleDegree = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [degrees.join(",")]);
 
-  const answers = degrees.map((d) => ({ value: d, label: String(d) }));
-
   return (
-    <PracticeShell<number>
+    <PracticeShell
       title="Scale Degrees"
       state={state}
       prompt="Which scale degree was the last note?"
@@ -106,16 +105,33 @@ export const ScaleDegree = ({
       getCorrectAnswer={() => current.degree}
       getCurrentAnswer={() => current.answer}
       onAnswerChange={(value) => (state.current.answer = value)}
-      answers={answers}
+      renderOptions={(hasAnswered) =>
+        degrees.map((d) => {
+          const isCorrectChoice = hasAnswered && d === current.degree;
+          return (
+            <Radio.Button
+              key={d}
+              value={d}
+              style={
+                isCorrectChoice
+                  ? { borderColor: "#16a34a", color: "#16a34a" }
+                  : undefined
+              }
+            >
+              {d}
+            </Radio.Button>
+          );
+        })
+      }
       renderReveal={() => {
         const scale = buildScaleNotes(current.key, "major", 4);
         const target = scale[current.degree - 1];
         const noteOnly = target ? stripOctave(simplifyNote(target)) : "";
         return (
-          <div className="space-y-1 text-base text-stone-800">
+          <div className="space-y-1 text-base">
             <div>
               <span className="font-semibold">Degree {current.degree}</span>
-              <span className="text-stone-500 ml-2 text-sm">
+              <span className="text-gray-500 ml-2">
                 — {noteOnly} in the key of {current.key} major
               </span>
             </div>
@@ -126,28 +142,32 @@ export const ScaleDegree = ({
         );
       }}
       renderExtra={() => (
-        <div className="flex flex-wrap gap-5 items-start">
+        <Space wrap size="middle" align="start">
           <FormField label="Tone" minWidth={160}>
-            <ButtonRow<Instrument>
-              items={[
-                { value: "guitar", label: "Guitar" },
-                { value: "piano", label: "Piano" },
-              ]}
+            <Radio.Group
               value={instrument}
-              onItemClick={(v) => (state.instrument = v)}
+              optionType="button"
+              size="middle"
+              onChange={(e) => (state.instrument = e.target.value)}
+              options={[
+                { label: "Guitar", value: "guitar" },
+                { label: "Piano", value: "piano" },
+              ]}
             />
           </FormField>
           <FormField label="Degrees" minWidth={280}>
             <MultiSelect<number>
               value={degrees as number[]}
-              onChange={(v) => (state.degrees = [...v].sort((a, b) => a - b))}
+              onChange={(v) =>
+                (state.degrees = [...v].sort((a, b) => a - b))
+              }
               options={ALL_DEGREES.map((n) => ({
                 value: n,
                 label: String(n),
               }))}
             />
           </FormField>
-        </div>
+        </Space>
       )}
     />
   );

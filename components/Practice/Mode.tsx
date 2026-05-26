@@ -1,3 +1,4 @@
+import { Radio, Space } from "antd";
 import { useEffect } from "react";
 import { useSnapshot } from "valtio";
 import { sample } from "lodash";
@@ -9,7 +10,6 @@ import {
 } from "./components";
 import { FormField } from "./FormField";
 import { MultiSelect } from "./MultiSelect";
-import { ButtonRow } from "@/components/ui/ButtonRow";
 import { Fretboard } from "@/components/Fretboard/Fretboard";
 import { MODES, type ModeId } from "@/constants/modes";
 import {
@@ -98,13 +98,8 @@ export const Mode = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modes.join(",")]);
 
-  const answers = modes.map((id) => {
-    const def = MODES.find((m) => m.id === id);
-    return { value: id, label: def?.label ?? id };
-  });
-
   return (
-    <PracticeShell<ModeId>
+    <PracticeShell
       title="Modes"
       state={state}
       prompt="Which mode did you hear?"
@@ -115,7 +110,25 @@ export const Mode = ({
       getCorrectAnswer={() => current.modeId}
       getCurrentAnswer={() => current.answer}
       onAnswerChange={(value) => (state.current.answer = value)}
-      answers={answers}
+      renderOptions={(hasAnswered) =>
+        modes.map((id) => {
+          const def = MODES.find((m) => m.id === id);
+          const isCorrectChoice = hasAnswered && id === current.modeId;
+          return (
+            <Radio.Button
+              key={id}
+              value={id}
+              style={
+                isCorrectChoice
+                  ? { borderColor: "#16a34a", color: "#16a34a" }
+                  : undefined
+              }
+            >
+              {def?.label ?? id}
+            </Radio.Button>
+          );
+        })
+      }
       renderReveal={() => {
         const def = MODES.find((m) => m.id === current.modeId);
         if (!def) return null;
@@ -127,19 +140,17 @@ export const Mode = ({
         const layout = ascending.length ? findScaleLayout(ascending) : null;
         return (
           <div className="space-y-3">
-            <div className="space-y-1 text-base text-stone-800">
+            <div className="space-y-1 text-base">
               <div>
                 <span className="font-semibold">
                   {current.tonic} {def.label}
                 </span>
                 {def.altName && (
-                  <span className="text-stone-500 ml-2 text-sm">
-                    ({def.altName})
-                  </span>
+                  <span className="text-gray-500 ml-2">({def.altName})</span>
                 )}
               </div>
               {displayed.length > 0 && (
-                <div className="text-stone-500 text-sm">
+                <div className="text-gray-600 text-sm">
                   {displayed.join(" – ")}
                 </div>
               )}
@@ -155,22 +166,24 @@ export const Mode = ({
                 highlightRoot={current.tonic}
               />
             )}
-            <div className="text-xs text-stone-500 text-center">
+            <div className="text-xs text-gray-500 text-center">
               Rose = tonic · Amber = other scale tones
             </div>
           </div>
         );
       }}
       renderExtra={() => (
-        <div className="flex flex-wrap gap-5 items-start">
+        <Space wrap size="middle" align="start">
           <FormField label="Tone" minWidth={160}>
-            <ButtonRow<Instrument>
-              items={[
-                { value: "guitar", label: "Guitar" },
-                { value: "piano", label: "Piano" },
-              ]}
+            <Radio.Group
               value={instrument}
-              onItemClick={(v) => (state.instrument = v)}
+              optionType="button"
+              size="middle"
+              onChange={(e) => (state.instrument = e.target.value)}
+              options={[
+                { label: "Guitar", value: "guitar" },
+                { label: "Piano", value: "piano" },
+              ]}
             />
           </FormField>
           <FormField label="Modes" minWidth={280}>
@@ -183,7 +196,7 @@ export const Mode = ({
               }))}
             />
           </FormField>
-        </div>
+        </Space>
       )}
     />
   );
