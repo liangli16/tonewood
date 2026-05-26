@@ -58,12 +58,18 @@ const renderDrill = (
   }
 };
 
+// Minimum questions the user must answer before "Done" is enabled. Kept as
+// a single source of truth so the displayed counter and the Done-gate stay
+// in sync.
+const MIN_ATTEMPTS = 3;
+
 export const DrillCard = ({ activity, done, onDone }: Props) => {
   const [progress, setProgress] = useState<DrillProgress>({
     attempts: 0,
     correct: 0,
   });
-  const ready = progress.attempts >= 3 && !done;
+  const ready = progress.attempts >= MIN_ATTEMPTS && !done;
+  const showThreshold = progress.attempts < MIN_ATTEMPTS;
 
   return (
     <div className="rounded-xl border border-amber-200 bg-amber-50/30 p-4 my-2">
@@ -76,8 +82,22 @@ export const DrillCard = ({ activity, done, onDone }: Props) => {
       </div>
       <div className="flex flex-wrap gap-2 items-center justify-between">
         <div className="text-sm text-stone-600">
-          {progress.attempts > 0 ? (
-            <>
+          {showThreshold ? (
+            <span>
+              <span className="font-medium text-stone-800">
+                {progress.attempts}
+              </span>{" "}
+              <span className="text-stone-400">/</span>{" "}
+              <span className="font-medium text-stone-800">
+                {MIN_ATTEMPTS}
+              </span>{" "}
+              questions
+              <span className="text-stone-400 ml-2">
+                (minimum to finish)
+              </span>
+            </span>
+          ) : (
+            <span>
               <span className="font-medium text-stone-800">
                 {progress.attempts}
               </span>{" "}
@@ -86,9 +106,7 @@ export const DrillCard = ({ activity, done, onDone }: Props) => {
                 {progress.correct}
               </span>{" "}
               correct
-            </>
-          ) : (
-            <span className="text-stone-500">Run a few questions to enable Done</span>
+            </span>
           )}
         </div>
         {!done && (
