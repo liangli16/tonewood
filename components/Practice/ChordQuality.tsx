@@ -1,4 +1,3 @@
-import { Radio, Space, Slider } from "antd";
 import { useEffect } from "react";
 import { useSnapshot } from "valtio";
 import { sample } from "lodash";
@@ -11,6 +10,8 @@ import {
 import { FormField } from "./FormField";
 import { MultiSelect } from "./MultiSelect";
 import { Fretboard } from "@/components/Fretboard/Fretboard";
+import { ButtonRow } from "@/components/ui/ButtonRow";
+import { RangeSlider } from "@/components/ui/RangeSlider";
 import { CHORD_QUALITIES, INVERSIONS } from "@/constants/chords";
 import {
   NOTE_NAMES,
@@ -114,12 +115,16 @@ export const ChordQuality = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qualities.join(","), inversions.join(",")]);
 
-  const correctAnswer = current.quality;
   const qualityMeta = CHORD_QUALITIES.find((c) => c.value === current.quality);
   const inversionMeta = INVERSIONS.find((i) => i.value === current.inversion);
 
+  const answers = qualities.map((q) => {
+    const meta = CHORD_QUALITIES.find((c) => c.value === q);
+    return { value: q, label: meta?.label ?? q };
+  });
+
   return (
-    <PracticeShell
+    <PracticeShell<ChordTypeId>
       title="Chords"
       state={state}
       prompt="Which chord did you hear?"
@@ -127,32 +132,11 @@ export const ChordQuality = ({
       hideHeaderScore={!!lock}
       onPlay={play}
       onNewQuestion={newChord}
-      onOptionPlay={(q) => playOption(q as ChordTypeId)}
+      onOptionPlay={(q) => playOption(q)}
       getCorrectAnswer={() => current.quality}
       getCurrentAnswer={() => current.answer}
       onAnswerChange={(value) => (state.current.answer = value)}
-      renderOptions={(hasAnswered, onOptionPlay) =>
-        qualities.map((q) => {
-          const meta = CHORD_QUALITIES.find((c) => c.value === q);
-          const isCorrectChoice = hasAnswered && q === correctAnswer;
-          return (
-            <Radio.Button
-              key={q}
-              value={q}
-              onClick={() =>
-                hasAnswered && onOptionPlay && onOptionPlay(q)
-              }
-              style={
-                isCorrectChoice
-                  ? { borderColor: "#16a34a", color: "#16a34a" }
-                  : undefined
-              }
-            >
-              {meta?.label ?? q}
-            </Radio.Button>
-          );
-        })
-      }
+      answers={answers}
       renderReveal={() => {
         const notes = buildChordNotes(
           current.root,
@@ -162,18 +146,18 @@ export const ChordQuality = ({
         );
         const voicing = findVoicing(notes);
         return (
-          <div className="space-y-2">
-            <div className="text-base">
+          <div className="space-y-3">
+            <div className="text-base text-stone-800">
               <span className="font-semibold">
                 {current.root}
                 {qualityMeta?.symbol}
               </span>
               {current.inversion > 0 && (
-                <span className="text-gray-500 ml-2">
+                <span className="text-stone-500 ml-2 text-sm">
                   · {inversionMeta?.label} inversion ({inversionMeta?.hint})
                 </span>
               )}
-              <span className="text-gray-400 ml-2 text-sm">
+              <span className="text-stone-400 ml-2 text-sm">
                 {notes.map(simplifyNote).join(" – ")}
               </span>
             </div>
@@ -186,24 +170,22 @@ export const ChordQuality = ({
                 highlightRoot={current.root}
               />
             )}
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-stone-500">
               Rose = root · Amber = other chord tones · × = don&apos;t play
             </div>
           </div>
         );
       }}
       renderExtra={() => (
-        <Space wrap size="middle" align="start">
+        <div className="flex flex-wrap gap-5 items-start">
           <FormField label="Tone" minWidth={160}>
-            <Radio.Group
-              value={instrument}
-              optionType="button"
-              size="middle"
-              onChange={(e) => (state.instrument = e.target.value)}
-              options={[
-                { label: "Guitar", value: "guitar" },
-                { label: "Piano", value: "piano" },
+            <ButtonRow<Instrument>
+              items={[
+                { value: "guitar", label: "Guitar" },
+                { value: "piano", label: "Piano" },
               ]}
+              value={instrument}
+              onItemClick={(v) => (state.instrument = v)}
             />
           </FormField>
           <FormField label="Chords" minWidth={260}>
@@ -231,17 +213,17 @@ export const ChordQuality = ({
             label={`Arpeggiate · ${
               arpeggiate === 0 ? "block" : `${arpeggiate.toFixed(2)}s`
             }`}
-            minWidth={180}
+            minWidth={200}
           >
-            <Slider
+            <RangeSlider
               min={0}
               max={0.25}
               step={0.01}
               value={arpeggiate}
-              onChange={(v) => (state.arpeggiate = v as number)}
+              onChange={(v) => (state.arpeggiate = v)}
             />
           </FormField>
-        </Space>
+        </div>
       )}
     />
   );

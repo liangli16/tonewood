@@ -1,15 +1,18 @@
 import classNames from "classnames";
+import { ReactNode } from "react";
 
 // Horizontal row of pill-shaped toggle buttons. Used for drill answer rows
-// (single-select), drill option toggles, and instrument toggles.
+// and instrument toggles.
 //
-// Supports an optional `highlight` map that overrides the rendered border
-// color of specific values (drills use this to mark the correct answer
-// green after the user picks).
+// One unified callback (onItemClick) — the consumer decides what to do
+// based on its own state. Keeps the component dumb.
+//
+// `highlight` lets the consumer override the visual tone of specific items
+// (drills use this to mark the correct answer green after the user picks).
 
-type ButtonRowItem<T extends string | number> = {
+export type ButtonRowItem<T extends string | number> = {
   value: T;
-  label: React.ReactNode;
+  label: ReactNode;
 };
 
 type HighlightTone = "correct" | undefined;
@@ -17,25 +20,19 @@ type HighlightTone = "correct" | undefined;
 type Props<T extends string | number> = {
   items: ButtonRowItem<T>[];
   value?: T;
-  onChange: (v: T) => void;
+  onItemClick: (v: T) => void;
   disabled?: boolean;
   className?: string;
-  // Per-item visual override. Used by drills to turn the correct answer
-  // green after the user has answered.
   highlight?: Partial<Record<string, HighlightTone>>;
-  // Click handler invoked after a value is already selected (used by
-  // ChordQuality for "click to replay this voicing").
-  onItemClick?: (v: T) => void;
 };
 
 export const ButtonRow = <T extends string | number>({
   items,
   value,
-  onChange,
+  onItemClick,
   disabled,
   className,
   highlight,
-  onItemClick,
 }: Props<T>) => (
   <div className={classNames("inline-flex flex-wrap gap-2", className)}>
     {items.map((it) => {
@@ -49,8 +46,7 @@ export const ButtonRow = <T extends string | number>({
           disabled={disabled}
           onClick={() => {
             if (disabled) return;
-            if (selected && onItemClick) onItemClick(it.value);
-            else onChange(it.value);
+            onItemClick(it.value);
           }}
           className={classNames(
             "inline-flex items-center justify-center",

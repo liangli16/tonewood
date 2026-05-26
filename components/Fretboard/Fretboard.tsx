@@ -85,7 +85,7 @@ export const Fretboard = ({
         </div>
 
         {/* Fretboard */}
-        <div className="relative border border-amber-300 rounded-md bg-amber-50/40">
+        <div className="relative border border-stone-200 rounded-md bg-amber-50/30 shadow-sm">
           {/* Position marker dots overlay */}
           <div
             className="absolute inset-x-0 pointer-events-none flex flex-col items-center"

@@ -32,7 +32,7 @@ export const ReflectionCard = ({ activity, done, onDone }: Props) => {
               <ButtonRow<string>
                 items={q.choices.map((c) => ({ value: c, label: c }))}
                 value={answers[q.id]}
-                onChange={(v) =>
+                onItemClick={(v) =>
                   setAnswers((a) => ({ ...a, [q.id]: v }))
                 }
                 disabled={done}
